@@ -1,11 +1,11 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_not_required
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import include, path
 
 from .health import healthz
+from .media import media_file
 
 # Сайт закрыт целиком: за это отвечает штатная LoginRequiredMiddleware
 # (см. settings.MIDDLEWARE). Исключения помечены здесь, в таблице
@@ -31,21 +31,15 @@ urlpatterns = [
     path("accounts/logout/",
          login_not_required(LogoutView.as_view()), name="logout"),
 
+    # Изображения плат. Раньше маршрутов разделов: последний маршрут
+    # компонентов ловит любой слаг и перехватил бы этот адрес. Почему
+    # отдаёт Django, а не прокси, — в config/media.py
+    path(f"{settings.MEDIA_URL.lstrip('/')}<path:path>", media_file,
+         name="media"),
+
     path("admin/", admin.site.urls),
     # платы идут раньше по той же причине
     path("boards/", include("boards.urls")),
     path("servers/", include("servers.urls")),
     path("", include("components.urls")),
 ]
-
-# Изображения плат при разработке отдаёт сам Django. В продакшене этого не
-# происходит и не должно: static() работает только при DEBUG, а файлы там
-# раздаёт nginx — см. «Обратный прокси» в README. Возить байты через Python
-# незачем, да и whitenoise загруженные файлы не видит: он знает только то,
-# что собрал collectstatic.
-#
-# Вход для них обязателен, как и для страниц: в списке исключений выше их
-# нет. В продакшене nginx отдаёт их кому угодно — это разница между средами,
-# и она была здесь всегда.
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -141,7 +141,10 @@ class ClosedSiteTests(SimpleTestCase):
     """
 
     def test_anonymous_is_sent_to_login(self):
-        for url in ("/", "/boards/", "/servers/", "/changes/", "/search/"):
+        # изображения плат в этом списке не случайно: их отдаёт Django, а не
+        # прокси, и закрыты они тем же middleware, что и страницы
+        for url in ("/", "/boards/", "/servers/", "/changes/", "/search/",
+                    "/media/boards/example.jpg"):
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, 302)
@@ -165,10 +168,34 @@ class ClosedSiteTests(SimpleTestCase):
                 view = resolve(url).func
                 self.assertIs(getattr(view, "login_required", True), False)
 
-        for url in ("/boards/", "/servers/", "/changes/"):
+        for url in ("/boards/", "/servers/", "/changes/",
+                    "/media/boards/example.jpg"):
             with self.subTest(url=url, open=False):
                 view = resolve(url).func
                 self.assertIs(getattr(view, "login_required", True), True)
+
+
+class MediaRouteTests(SimpleTestCase):
+    """Изображения плат отдаются и без DEBUG.
+
+    Раньше маршрут подключался только при ``DEBUG``, и в контейнере, где он
+    выключен, ``/media/...`` отвечал 404 при файлах, лежащих на месте.
+    Ошибка вылезала только на сервере, поэтому проверка нужна именно на
+    маршрут, а не на отдачу файла.
+    """
+
+    def test_route_exists_regardless_of_debug(self):
+        for debug in (True, False):
+            with self.subTest(debug=debug), self.settings(DEBUG=debug):
+                match = resolve("/media/boards/example.jpg")
+                self.assertEqual(match.url_name, "media")
+                self.assertEqual(match.kwargs["path"], "boards/example.jpg")
+
+    def test_nested_paths_reach_the_view(self):
+        # upload_to раскладывает снимки по подкаталогам, и маршрут должен
+        # пропускать слэши внутри пути, а не только имя файла
+        match = resolve("/media/boards/2026/09/top.jpg")
+        self.assertEqual(match.kwargs["path"], "boards/2026/09/top.jpg")
 
 
 class LoginPageTests(SimpleTestCase):

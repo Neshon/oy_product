@@ -169,7 +169,10 @@ server {
     # пачка BOM-файлов; должно совпадать с DJANGO_MAX_UPLOAD_SIZE (20 МБ)
     client_max_body_size 20m;
 
-    # изображения плат: отдаёт nginx, Django к ним не притрагивается
+    # Изображения плат. Без прокси их отдаёт Django (config/media.py);
+    # этот location перехватывает адрес раньше, и Django к файлам больше
+    # не притрагивается. Разница видна в двух местах: nginx отдаёт их без
+    # проверки входа и с кэшированием на 30 дней
     location /media/ {
         alias /var/lib/docker/volumes/oy_media/_data/;
         expires 30d;

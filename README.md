@@ -132,8 +132,7 @@ python manage.py check --deploy         # небезопасные настро�
 python manage.py test                   # тесты
 ```
 
-Настройки линтера — в `pyproject.toml`, те же команды гоняет CI
-(`.github/workflows/ci.yml`). Прямые зависимости перечислены в
+Настройки линтера — в `pyproject.toml`. Прямые зависимости перечислены в
 `requirements.in`, а `requirements.txt` собирается из него:
 
 ```bash
