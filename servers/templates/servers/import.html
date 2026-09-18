@@ -1,0 +1,33 @@
+{% extends "components/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Импорт System BOM · Серверы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">импорт состава</div>
+  <div class="legend__row">
+    <h1>System BOM</h1>
+    <span class="legend__actions">
+      <a class="btn btn--ghost" href="{% url 'servers:list' %}">К списку</a>
+      <button class="btn btn--primary" type="submit" form="bom-form">Загрузить</button>
+    </span>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate id="bom-form">
+  {% csrf_token %}
+  <div class="panel">
+    <div class="formgrid" style="grid-template-columns:1fr">
+      {% for field in form %}
+        {{ field|as_crispy_field }}
+      {% endfor %}
+    </div>
+    <div class="hints muted">
+      Партномер изделия берётся из первой строки файла. Позиции, которых
+      ещё нет, заводятся заготовками — карточку можно дополнить позже.
+      Строки, добавленные руками, повторный импорт не трогает.
+    </div>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% comment %}
+Выбор темы до отрисовки страницы: иначе при загрузке мигает светлым.
+
+Вынесено отдельным фрагментом, потому что страниц с шапкой две — основной
+интерфейс и форма входа, — а скрипт должен быть на обеих и одинаковый.
+Разъехавшись, они дали бы мигание ровно на одной из них, и заметить это
+можно только глазами.
+
+Ключ в localStorage тот же, что пишет переключатель темы в base.html.
+{% endcomment %}
+<script>
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem("oy-theme"); } catch (e) {}
+    var system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = saved || system;
+  })();
+</script>

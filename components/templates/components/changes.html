@@ -1,0 +1,100 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}Журнал изменений{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">библиотека компонентов</div>
+  <div class="legend__row">
+    <h1>Журнал изменений</h1>
+    <span class="legend__count">{{ total }} записей</span>
+  </div>
+</div>
+
+<div class="panel">
+  {# id ждёт _page_size.html: селект «строк» отправляет эту форму #}
+  <form class="toolbar" method="get" id="list-filters">
+    <select class="field field--select" name="action">
+      <option value="">все события</option>
+      {% for value, label in actions %}
+        <option value="{{ value }}" {% if value == selected.action %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+
+    <select class="field field--select" name="author">
+      <option value="">все сотрудники</option>
+      {% for login, name in authors %}
+        <option value="{{ login }}" {% if login == selected.author %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+
+    <select class="field field--select" name="table">
+      <option value="">все таблицы</option>
+      {% for name in tables %}
+        <option value="{{ name }}" {% if name == selected.table %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+
+    <input class="field" type="date" name="since" value="{{ selected.since }}"
+           title="С какой даты">
+    <input class="field" type="date" name="until" value="{{ selected.until }}"
+           title="По какую дату включительно">
+
+    <button class="btn" type="submit">Применить</button>
+    {% if request.GET %}
+      <a class="btn btn--ghost" href="{% url 'components:changes' %}">Сбросить</a>
+    {% endif %}
+  </form>
+
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th style="width:120px">Событие</th>
+            <th style="width:170px">Дата изменения</th>
+            <th style="width:200px">Произвёл изменение</th>
+            <th>Компонент</th>
+            <th style="width:130px">Строк изменилось</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for change in rows %}
+            <tr data-href="{% url 'components:change' change.pk %}">
+              <td>
+                <span class="chip chip--event {{ change.chip_class }}">{{ change.short_action }}</span>
+              </td>
+              <td class="desc">
+                <a class="rowlink" href="{% url 'components:change' change.pk %}">
+                  {{ change.created|date:"d.m.Y H:i" }}</a>
+              </td>
+              <td class="desc" title="{{ change.author }}">
+                {{ change.author_display|default:"—" }}</td>
+              <td class="pn">{{ change.component_table }} #{{ change.component_id }}</td>
+              <td class="num">{{ change.fields_count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "_pagination.html" %}
+  {% else %}
+    <div class="empty">
+      <h2>Записей нет</h2>
+      <p class="muted">
+        {% if request.GET %}
+          Под выбранные условия ничего не подошло.
+        {% else %}
+          Журнал ведётся с того момента, как его включили: изменения,
+          сделанные раньше, в него не попали.
+        {% endif %}
+      </p>
+      {% if request.GET %}
+        <a class="btn" href="{% url 'components:changes' %}">Сбросить фильтры</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

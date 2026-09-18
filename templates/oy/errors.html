@@ -1,0 +1,9 @@
+{% comment %}
+Ошибки, не привязанные к полю. Нужен пакету crispy-forms: на него ссылаются
+его собственные шаблоны, и без него они падают на include.
+{% endcomment %}
+{% if form.non_field_errors %}
+  <div class="alert alert--error" role="alert">
+    {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+  </div>
+{% endif %}

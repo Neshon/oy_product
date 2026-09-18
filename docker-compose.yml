@@ -1,0 +1,58 @@
+# Развёртывание на сервере.
+#
+#   docker compose up -d --build
+#
+# Приложение публикуется на всех адресах сервера, порт 80: сайт открывают
+# по IP, отдельного обратного прокси нет. Статику раздаёт само приложение
+# (whitenoise), так что nginx для этого не нужен.
+#
+# Если позже появится домен и https, поставьте перед приложением nginx,
+# верните публикацию на 127.0.0.1 (WEB_BIND в .env) и включите
+# DJANGO_BEHIND_PROXY=True — см. README, «Обратный прокси».
+#
+# База по умолчанию поднимается рядом, в своём контейнере: за это отвечает
+# docker-compose.postgres.yml, подключённый через COMPOSE_FILE в .env.
+
+services:
+  web:
+    build: .
+    image: oy-components:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # задано здесь, а не в .env: в контейнере отладочный режим не включают
+      # ни при каких обстоятельствах — он показывает настройки и трассировки
+      DJANGO_DEBUG: "False"
+      DJANGO_CACHE_URL: "redis://redis:6379/0"
+      DJANGO_MEDIA_ROOT: "/srv/media"
+    ports:
+      # WEB_BIND=127.0.0.1 — если впереди появится прокси на хосте
+      - "${WEB_BIND:-0.0.0.0}:${WEB_PORT:-80}:8000"
+    volumes:
+      # Изображения плат. Томом, а не каталогом в образе: всё, что лежит в
+      # образе, исчезает при пересборке. Каталог должен попадать в
+      # резервную копию наравне с базой — в базе от них только путь.
+      - media:/srv/media
+    depends_on:
+      redis:
+        condition: service_healthy
+    # если база работает на самом сервере, но вне Docker, в .env указывают
+    # POSTGRES_HOST=host.docker.internal и раскомментируют строки ниже
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # общий кэш для всех работников gunicorn: без него сброс после правки
+    # доходит только до того работника, который её принял (см. README)
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  media:

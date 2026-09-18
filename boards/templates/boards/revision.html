@@ -1,0 +1,193 @@
+{% extends "components/base.html" %}
+
+{% block title %}{{ revision.oy_pn|default:board.base_pn }} · Ревизия платы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> ·
+    <a href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a> · ревизия
+  </div>
+  <div class="legend__row">
+    <h1 class="mono">{{ revision.oy_pn|default:revision.label }}</h1>
+    <span class="chip chip--table">Rev {{ revision.board_rev|default:"—" }}</span>
+    <span class="chip chip--table">BOM {{ revision.bom_rev|default:"—" }}</span>
+    {% if revision.variant %}<span class="chip chip--dup">исполнение {{ revision.variant }}</span>{% endif %}
+    {% if not revision.is_current %}<span class="chip chip--replacement">не текущая ревизия</span>{% endif %}
+    <span class="legend__count">
+      <a href="{% url 'boards:bom' board.pk revision.number %}">{{ position_count }} позиций · {{ item_count }} строк</a>
+      · чек-листы {{ checklist_done }}/{{ checklist_total }}</span>
+    <span class="legend__actions">
+      <a class="btn btn--primary"
+         href="{% url 'boards:bom' board.pk revision.number %}">Состав BOM</a>
+      {% if can_edit_boards %}
+        {% if not revision.is_current %}
+          <form method="post" action="{% url 'boards:activate' board.pk revision.number %}">
+            {% csrf_token %}
+            <button class="btn" type="submit">Сделать текущей</button>
+          </form>
+        {% endif %}
+        <a class="btn" href="{% url 'boards:revision-edit' board.pk revision.number %}">Править карточку</a>
+        {# кнопка про ревизию целиком; на первом чек-листе она пропадала бы, стоило открыть другую вкладку #}
+        <a class="btn" href="{% url 'boards:checklist' board.pk revision.number %}">Заполнить чек-листы</a>
+        <a class="btn btn--danger"
+           href="{% url 'boards:revision-delete' board.pk revision.number %}">Удалить ревизию</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+{% comment %}
+  Два столбца: слева снимки, справа карточка. Снимки задают высоту — 400 px
+  в ширину и две стороны друг под другом, — и карточка как раз укладывается
+  рядом. Документы и чек-листы ушли во вкладки ниже.
+
+  Поля карточки — в два столбца (specs--split): их семнадцать, значения
+  короткие — номер, имя, «ссылка», — и в одну колонку список тянулся на два
+  экрана ради полутора сантиметров текста в строке. Список документов делить
+  нельзя: там пути на диск R, и в половине ширины они рвутся на три строки.
+{% endcomment %}
+<div class="revpage">
+
+  <div class="panel">
+    <div class="section__head">внешний вид</div>
+    <div class="revcard__photos">
+      {% include "_shot.html" with photo=revision.photo_top caption="Top side" subject=revision.label side="сверху" %}
+      {% include "_shot.html" with photo=revision.photo_bottom caption="Bottom side" subject=revision.label side="снизу" %}
+    </div>
+  </div>
+
+  <div class="stack revpage__main">
+    <div class="panel">
+      <div class="section__head">
+        карточка печатного узла
+        {% if revision.approved %}
+          <span class="chip chip--added">утверждена {{ revision.approved_at|default:"" }}</span>
+        {% else %}
+          <span class="chip">не утверждена</span>
+        {% endif %}
+      </div>
+      <dl class="specs specs--split">
+        <div><dt>Полное наименование</dt><dd>{{ board.name|default:"—" }}</dd></div>
+        <div><dt>Ревизия печатной платы (PCB)</dt><dd>{{ revision.board_rev|default:"—" }}</dd></div>
+        <div><dt>Ревизия BOM</dt><dd>{{ revision.bom_rev|default:"—" }}</dd></div>
+        <div><dt>Исполнение</dt><dd>{{ revision.variant|default:"—" }}</dd></div>
+        <div><dt>Наименование печатной платы (PCB)</dt><dd>{{ revision.pcb_name|default:"—" }}</dd></div>
+        <div><dt>Наименование BOM</dt><dd>{{ revision.bom_name|default:"—" }}</dd></div>
+        <div><dt>Соответствие PCB GCT</dt><dd>{{ revision.gct_pcb|default:"—" }}</dd></div>
+        <div><dt>Соответствие BOM GCT</dt><dd>{{ revision.gct_bom|default:"—" }}</dd></div>
+        <div><dt>Предыдущая ревизия</dt><dd>{{ revision.previous_revision|default:"—" }}</dd></div>
+        <div><dt>Разработано</dt><dd>{{ revision.developed|default:"—" }}</dd></div>
+        <div><dt>Стадия разработки</dt><dd>{{ revision.stage|default:"—" }}</dd></div>
+        <div><dt>Поставщик PCB</dt><dd>{{ revision.pcb_supplier|default:"—" }}</dd></div>
+        <div><dt>Шелкография</dt><dd>{{ revision.silkscreen_status|default:"—" }}</dd></div>
+        <div><dt>ЭКБ</dt><dd>{{ revision.ekb|default:"—" }}</dd></div>
+        <div><dt>Сборка</dt><dd>{{ revision.assembly|default:"—" }}</dd></div>
+        <div><dt>Реестр МПТ</dt><dd>{{ revision.mpt_registry|default:"—" }}</dd></div>
+        <div><dt>Обозначение на шелкографии</dt><dd>{{ revision.silkscreen|default:"—" }}</dd></div>
+        <div><dt>Количество плат в мультизаготовке</dt><dd>{{ revision.panel_count|default:"—" }}</dd></div>
+        <div><dt>Децимальный номер узла печатного (PCBA)</dt><dd>{{ revision.decimal_pcba|default:"—" }}</dd></div>
+        <div><dt>Децимальный номер печатной платы (PCB)</dt><dd>{{ revision.decimal_pcb|default:"—" }}</dd></div>
+        <div><dt>Вид печатной платы (из ПП РФ №719)</dt><dd>{{ revision.pcb_type|default:"—" }}</dd></div>
+        <div><dt>Количество баллов</dt><dd>{{ revision.points|default:"—" }}</dd></div>
+        <div><dt>Наименование ресурсной спецификации (1С)</dt><dd>{{ revision.spec_1c|default:"—" }}</dd></div>
+        <div><dt>Ссылка на ресурсную спецификацию (1С)</dt>
+          <dd>{% if revision.spec_1c_url %}<a href="{{ revision.spec_1c_url }}">ссылка</a>{% else %}—{% endif %}</dd></div>
+        <div><dt>FRU-шаблон (MegaRAC)</dt>
+          <dd>{% if revision.fru_megarac %}<a href="{{ revision.fru_megarac }}">ссылка</a>{% else %}—{% endif %}</dd></div>
+        <div><dt>FRU-шаблон (OYBMC)</dt>
+          <dd>{% if revision.fru_oybmc %}<a href="{{ revision.fru_oybmc }}">ссылка</a>{% else %}—{% endif %}</dd></div>
+        {% comment %}
+          Дата и автор — не те, что написаны в присланном файле, а наши:
+          когда и кто загрузил BOM. Что стояло в шапке файла, не
+          пригодилось ни разу, а «когда состав обновляли в последний раз»
+          спрашивают постоянно.
+        {% endcomment %}
+        <div><dt>Дата загрузки BOM</dt>
+          <dd>{{ revision.imported_at|date:"d.m.Y H:i"|default:"—" }}</dd></div>
+        <div><dt>Кто загрузил BOM</dt>
+          <dd>{{ revision.imported_by|default:"—" }}</dd></div>
+      </dl>
+    </div>
+
+  </div>
+</div>
+
+{% comment %}
+  Вкладки, а не колонка панелей: чек-листов до пяти, в каждом два десятка
+  строк, и карточка превращалась в ленту, по которой не долистать до
+  нужного. Разметка при этом осталась плоской — без скрипта панели просто
+  идут одна за другой, как раньше (components/static/components/tabs.js).
+{% endcomment %}
+<div class="tabs" data-tabs>
+
+  <div class="panel" data-tab="Документы">
+      {% comment %}
+        Здесь specs--split нет намеренно: значения — пути на диск R длиной
+        в шестьдесят знаков. В половине ширины они рвутся на три строки, и
+        четыре строки вместо семи достаются ценой нечитаемого пути. Строк
+        тут всего семь, экономить не на чем.
+      {% endcomment %}
+      <div class="section__head">прикреплённые документы и ссылки</div>
+      <dl class="specs specs--tight">
+        <div><dt>Папка «Source» (диск R)</dt>
+          <dd>{{ revision.source_dir_url|default:"—" }}</dd></div>
+        <div><dt>Папка «Manufacture» (диск R)</dt>
+          <dd>{{ revision.manufacture_url|default:"—" }}</dd></div>
+        <div><dt>Папка «Assembly» (диск R)</dt>
+          <dd>{{ revision.assembly_url|default:"—" }}</dd></div>
+        <div><dt>Папка «Testing» (диск R)</dt>
+          <dd>{{ revision.testing_dir_url|default:"—" }}</dd></div>
+        <div><dt>Папка «ЕСКД» (диск R)</dt>
+          <dd>{{ revision.eskd_dir_url|default:"—" }}</dd></div>
+        <div><dt>Матрица тестового покрытия</dt>
+          <dd>{% if revision.test_matrix_url %}<a href="{{ revision.test_matrix_url }}">открыть</a>{% else %}—{% endif %}</dd></div>
+        <div><dt>Эталонный BOM-файл</dt>
+          <dd>{% if revision.reference_bom_url %}<a href="{{ revision.reference_bom_url }}">открыть</a>{% else %}—{% endif %}</dd></div>
+      </dl>
+    </div>
+
+{% for group in checklists %}
+  <div class="panel" data-tab="{{ group.short|default:group.title }}"
+     data-tab-note="{{ group.done }}/{{ group.rows|length }}">
+    <div class="section__head">
+    {{ group.title }}
+    <span class="muted">{{ group.done }} из {{ group.rows|length }}</span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid grid--compact">
+        <thead>
+          <tr>
+            <th>Название документа</th>
+            <th style="width:150px">Наличие</th>
+            <th>Комментарий / ссылка</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in group.rows %}
+            <tr>
+              <td class="desc">
+                {{ row.title }}
+                {% comment %}
+                  Формат, зона ответственности и примечание — справка о самом
+                  документе, одинаковая у всех ревизий. Отдельными колонками
+                  они растягивали таблицу вдвое, а читали в ней два поля:
+                  название и готовность.
+                {% endcomment %}
+                {% if row.details %}<div class="rowmeta">{{ row.details }}</div>{% endif %}
+              </td>
+              <td>{% if row.status %}{{ row.status_display }}{% else %}<span class="muted">не заполнено</span>{% endif %}</td>
+              <td class="desc">
+                {% if row.url %}<a href="{{ row.url }}">{{ row.comment|default:"ссылка" }}</a>
+                {% else %}{{ row.comment|default:"—" }}{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endfor %}
+</div>
+
+{% endblock %}

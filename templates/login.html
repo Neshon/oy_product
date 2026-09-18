@@ -1,0 +1,92 @@
+{% comment %}
+Форма входа в библиотеку.
+
+Своя, а не админская. Админская форма (`AdminAuthenticationForm`) отказывает
+всем, у кого не стоит «Статус персонала»: она спрашивает учётную запись
+персонала, а не сотрудника. Роли в библиотеке — обычные группы Django, и
+у схемотехника или тополога `is_staff` нет и быть не должно, поэтому через
+админскую форму они войти не могли вовсе.
+
+Шапку интерфейса здесь не разворачиваем: боковая навигация и общий поиск
+вошедшему ещё не принадлежат, а показывать их неработающими — обещать то,
+чего нет. Остаётся фирменный блок с логотипом и сама форма.
+{% endcomment %}
+{% load static %}<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#272b32">
+<title>Вход · Библиотека компонентов</title>
+
+{% include "_theme_boot.html" %}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'components/app.css' %}">
+</head>
+<body class="authpage">
+
+<main class="auth">
+  <div class="auth__brand">
+    <img class="auth__logo" src="{% static 'components/logo-white.svg' %}" alt="OpenYard">
+    <div class="auth__section">Библиотека компонентов</div>
+    <p class="auth__lead">Элементная база, платы и составы изделий.
+       Доступ по учётной записи сотрудника.</p>
+    <div class="auth__cables cables" aria-hidden="true"></div>
+  </div>
+
+  <form class="auth__form" method="post" novalidate>
+    {% csrf_token %}
+    <h1 class="auth__title">Вход</h1>
+
+    {% if form.errors %}
+      {% comment %}
+        Django не уточняет, что именно не совпало, и правильно делает:
+        «такого пользователя нет» подсказывает, какие логины существуют.
+      {% endcomment %}
+      <div class="alert alert--error">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        {% if not form.non_field_errors %}Проверьте логин и пароль.{% endif %}
+      </div>
+    {% endif %}
+
+    <div class="auth__row">
+      <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+      <input class="field" type="text" name="{{ form.username.html_name }}"
+             id="{{ form.username.id_for_label }}"
+             value="{{ form.username.value|default:'' }}"
+             autocomplete="username" autocapitalize="none"
+             autofocus required>
+    </div>
+
+    <div class="auth__row">
+      <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+      <input class="field" type="password" name="{{ form.password.html_name }}"
+             id="{{ form.password.id_for_label }}"
+             autocomplete="current-password" required>
+    </div>
+
+    {% comment %}
+      Куда шли до того, как нас развернули на вход, — вместе со строкой
+      запроса: ссылку на отфильтрованный список присылают друг другу.
+
+      Имя поля записано прямо, а не переменной: «next» — это значение
+      LoginView.redirect_field_name по умолчанию, и под тем же ключом
+      представление кладёт в контекст само значение ({{ next }}). Своей
+      переменной с именем поля в контексте нет — так же сделано и в
+      шаблонах самого Django.
+    {% endcomment %}
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <button class="btn btn--primary auth__submit" type="submit">Войти</button>
+
+    <p class="auth__note muted">Учётные записи и роли заводит администратор
+       библиотеки. Роль определяет, что можно менять; смотреть может каждый
+       вошедший.</p>
+  </form>
+</main>
+
+</body>
+</html>

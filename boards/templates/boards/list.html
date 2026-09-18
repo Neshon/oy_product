@@ -1,0 +1,74 @@
+{% extends "components/base.html" %}
+
+{% block title %}Платы · Библиотека компонентов{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">составы плат</div>
+  <div class="legend__row">
+    <h1>Платы</h1>
+    <span class="legend__count">{{ page.paginator.count }} шт.</span>
+    <span class="legend__actions">
+      {% if can_edit_boards %}
+        <a class="btn" href="{% url 'boards:create' %}">Завести плату</a>
+        <a class="btn btn--primary" href="{% url 'boards:import' %}">Импортировать BOM</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="panel">
+  <form class="toolbar" method="get">
+    <input class="field field--search" type="search" name="q" value="{{ term }}"
+           placeholder="OY P/N, номер платы, GCT P/N, децимальный номер, автор"
+           autocomplete="off">
+    <select class="field field--select" name="type" data-autosubmit="1"
+            data-title="Тип платы">
+      <option value="">все типы</option>
+      {% for value, label in board_types %}
+        <option value="{{ value }}" {% if value == board_type %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn--primary" type="submit">Найти</button>
+    {% if term or board_type %}<a class="btn btn--ghost" href="{% url 'boards:list' %}">Сбросить</a>{% endif %}
+  </form>
+
+  {% if page.object_list %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>OY P/N</th>
+            <th>Наименование</th>
+            <th style="width:150px">Тип</th>
+            <th style="width:110px">Ревизий</th>
+            <th style="width:130px">Обновлено</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for board in page.object_list %}
+            <tr data-href="{{ board.get_absolute_url }}">
+              <td class="pn"><a class="rowlink" href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a></td>
+              <td class="desc">{{ board.name|default:"—" }}</td>
+              <td>{{ board.get_board_type_display|default:"—" }}</td>
+              <td class="num">{{ board.revision_count }}</td>
+              <td class="pn">{{ board.imported_at|date:"d.m.Y" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "_pagination.html" with only_pages=1 %}
+  {% else %}
+    <div class="empty">
+      <h2>Плат пока нет</h2>
+      <p class="muted">Загрузите BOM-файл — состав платы разберётся автоматически.</p>
+      {% if can_edit_boards %}
+        <a class="btn" href="{% url 'boards:create' %}">Завести вручную</a>
+        <a class="btn btn--primary" href="{% url 'boards:import' %}">Импортировать BOM</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

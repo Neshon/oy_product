@@ -1,0 +1,9 @@
+{% comment %}
+То же для набора форм. Формсетов в проекте сейчас нет, но шаблон входит в
+обязательную часть пакета: crispy включает его безусловно.
+{% endcomment %}
+{% if formset.non_form_errors %}
+  <div class="alert alert--error" role="alert">
+    {% for error in formset.non_form_errors %}<div>{{ error }}</div>{% endfor %}
+  </div>
+{% endif %}

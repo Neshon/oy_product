@@ -1,0 +1,119 @@
+{% extends "components/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if object %}{{ object.display_title }} — правка{% else %}Новый компонент{% endif %}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'components:list' category.slug %}">{{ category.table }}</a> · {{ category.title }}
+  </div>
+  <div class="legend__row">
+    <h1>
+      {% if object %}Правка: <span class="mono">{{ object.display_title }}</span>
+      {% elif source %}Новая замена
+      {% elif sample %}Новый компонент по образцу
+      {% else %}Новый компонент{% endif %}
+    </h1>
+    {% if oy_id %}
+      <span class="chip chip--table" title="{{ oy_id_hint }}">{{ oy_id }}</span>
+    {% else %}
+      <span class="chip" title="В таблице ещё нет ни одного OY ID — назначьте его через админку">OY ID не назначен</span>
+    {% endif %}
+    {# кнопки стоят вне <form>, поэтому связаны с ней атрибутом form= #}
+    <span class="legend__actions">
+      <a class="btn btn--ghost"
+         href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'components:list' category.slug %}{% endif %}">Отменить</a>
+      <button class="btn btn--primary" type="submit" form="component-form">
+        {% if object %}Сохранить изменения{% else %}Создать компонент{% endif %}
+      </button>
+    </span>
+  </div>
+</div>
+
+{% if form.errors %}
+  <div class="alert alert--error" role="alert">
+    <b>Форма не сохранена.</b>
+    {% if not form.duplicates %}
+      {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+    {% endif %}
+    <ul>
+      {% for field in form %}
+        {% for error in field.errors %}
+          <li><a href="#{{ field.id_for_label }}">{{ error }}</a></li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<form method="post" novalidate id="component-form">
+  {% csrf_token %}
+  {% if source %}
+    <input type="hidden" name="from" value="{{ source.pk }}">
+    <div class="alert">
+      Замена для <a href="{{ source.get_absolute_url }}" class="mono">{{ source.display_title }}</a>.
+      Параметры списаны с него: подгруппа, корпус, номинал и прочее уже
+      заполнены. Vendor PN, Vendor, GBT PN и Datasheet оставлены пустыми —
+      у аналога они свои. OY ID <span class="mono">{{ source.oy_id }}</span> берётся у
+      основного компонента и не редактируется.
+    </div>
+  {% endif %}
+
+  {% if sample %}
+    <div class="alert">
+      Параметры списаны с
+      <a href="{{ sample.get_absolute_url }}" class="mono">{{ sample.display_title }}</a>.
+      Vendor PN, Vendor, GBT PN и Datasheet намеренно оставлены пустыми —
+      первые три нужно заполнить, иначе получится дубль. OY ID назначен новый, следующий по
+      нумерации.
+    </div>
+  {% endif %}
+
+  {% if form.duplicate_check_failed %}
+    <div class="alert alert--error" role="alert">
+      <b>Проверка на дубли прошла не полностью.</b>
+      Не удалось опросить таблицы: {{ form.duplicate_check_failed|join:", " }}.
+      В них дубль мог остаться незамеченным.
+    </div>
+  {% endif %}
+
+  {% if form.is_bound and not form.duplicates and not form.duplicate_rules %}
+    <div class="alert" role="alert">
+      Проверка на дубли не выполнялась: для неё нужен либо
+      <b>Vendor PN вместе с Vendor</b>, либо <b>GBT PN</b>. Сейчас эти поля
+      пусты или заполнены заглушкой, и сравнивать не с чем.
+    </div>
+  {% endif %}
+
+  {% if form.duplicates %}
+    <div class="alert alert--error" role="alert">
+      <b>Похоже, такой компонент уже есть в библиотеке.</b>
+      <ul>
+        {% for match in form.duplicates %}
+          <li>
+            <a class="mono" href="{{ match.obj.get_absolute_url }}" target="_blank" rel="noopener">{{ match.obj.display_title }}</a>
+            — {{ match.category.table }}{% if match.reason %}, совпадает {{ match.reason }}{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+      <label for="{{ form.confirm_duplicate.id_for_label }}">
+        {{ form.confirm_duplicate }}
+        Это другая деталь — всё равно завести
+      </label>
+    </div>
+  {% endif %}
+  {% for title, fields in sections %}
+    <div class="panel" style="margin-bottom:14px">
+      <div class="section__head">{{ title }}</div>
+      <div class="formgrid">
+        {% for field in fields %}
+          {{ field|as_crispy_field }}
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <p class="formnote">Поля id, Created и Author заполняются автоматически.</p>
+</form>
+{% endblock %}

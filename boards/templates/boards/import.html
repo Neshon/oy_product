@@ -1,0 +1,77 @@
+{% extends "components/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Импорт BOM{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow"><a href="{% url 'boards:list' %}">Платы</a></div>
+  <div class="legend__row"><h1>Импорт BOM</h1></div>
+</div>
+
+<div class="cols">
+  <div class="panel">
+    <div class="section__head">файл</div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="formgrid" style="grid-template-columns:1fr">
+        {% for field in form %}
+          {{ field|as_crispy_field }}
+        {% endfor %}
+      </div>
+      <div class="formbar">
+        <button class="btn btn--primary" type="submit">Загрузить и разобрать</button>
+        <a class="btn btn--ghost" href="{% url 'boards:list' %}">Отмена</a>
+      </div>
+    </form>
+
+    {% if results %}
+      <div class="section__head">результат · файлов {{ results|length }}</div>
+      <table class="grid grid--compact">
+        <thead>
+          <tr><th>Файл</th><th>Плата</th><th>Строк</th><th>Без компонента</th></tr>
+        </thead>
+        <tbody>
+          {% for result in results %}
+            <tr {% if result.ok %}data-href="{{ result.revision.get_absolute_url }}"{% endif %}>
+              <td class="pn">{{ result.name }}</td>
+              <td class="desc">
+                {% if result.ok %}
+                  <a class="rowlink" href="{{ result.revision.get_absolute_url }}">
+                    {{ result.revision.board.base_pn }}</a>
+                  <span class="muted">ревизия {{ result.revision.number }}</span>
+                {% else %}
+                  <span style="color:var(--fault)">{{ result.error }}</span>
+                {% endif %}
+              </td>
+              <td class="num">{% if result.ok %}{{ result.lines }}{% else %}—{% endif %}</td>
+              <td class="num">{% if result.ok %}{{ result.unlinked }}{% else %}—{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="section__head">что ожидается в файле</div>
+    <div class="hints" style="padding:20px 24px">
+      <div>Лист <span class="mono">BOM</span>; если его нет, берётся первый лист.</div>
+      <div>Плата опознаётся по шапке <span class="mono">Actual OY BOM P/N</span>,
+           а если её нет — по строке <span class="mono">Model Name : …</span>
+           или по имени файла.</div>
+      <div>Строка заголовков таблицы опознаётся по колонкам
+           <span class="mono">M/S</span> и артикулу — сама постановка колонок
+           и написание («I/N» или «Item Number», «Vendor P/N» или «Parts: Vendor PN»,
+           «QTY» или «Quantity») значения не имеют.</div>
+      <div>Строка <span class="mono">M</span> — основной компонент, идущие следом
+           <span class="mono">S</span> — его замены. Если колонки M/S в файле
+           нет вовсе, все строки считаются основными.</div>
+      <div>Файлов можно выбрать сразу несколько: каждый разбирается отдельно,
+           ошибка в одном не отменяет остальные.</div>
+      <div>Повторный импорт того же OY P/N добавляет новую ревизию платы,
+           прежние остаются в истории.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

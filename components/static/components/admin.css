@@ -1,0 +1,186 @@
+/* Фирменная тема OpenYard для админки Django (мини-брендбук v1.0, 26.09.2024).
+   Django собирает интерфейс админки на CSS-переменных, поэтому почти всё
+   делается переопределением их значений — вёрстка админки не трогается,
+   и обновление Django ничего не сломает.
+
+   Палитра и типографика — те же, что в app.css: #952AFF и #9224FF,
+   #272B32, #F0F0F0/#E4E4E4, Verdana Medium, Roboto Mono
+   для артикулов. Жёлтый #FFC700 в идентификации не участвует и оставлен
+   только за предупреждениями — это функциональный сигнал, не фирменный цвет. */
+
+:root,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  /* базовые цвета */
+  --primary: #272b32;
+  --secondary: #952aff;
+  --accent: #9224ff;
+  --primary-fg: #ffffff;
+
+  --body-fg: #272b32;
+  --body-bg: #f0f0f0;
+  --body-quiet-color: #616a75;
+  --body-loud-color: #272b32;
+
+  /* шапка */
+  --header-color: #f0f0f0;
+  --header-branding-color: #ffffff;
+  --header-bg: #272b32;
+  --header-link-color: #ffffff;
+
+  /* хлебные крошки */
+  --breadcrumbs-fg: #3a424b;
+  --breadcrumbs-link-fg: #272b32;
+  --breadcrumbs-bg: #e4e4e4;
+
+  /* ссылки */
+  --link-fg: #952aff;
+  --link-hover-color: #9224ff;
+  --link-selected-fg: #9224ff;
+
+  /* линии и подложки */
+  --hairline-color: #ececee;
+  --border-color: #e0e0e2;
+  --darkened-bg: #f0f0f0;
+  --selected-bg: #e4e4e4;
+  --selected-row: #e4e4e4;
+
+  /* кнопки */
+  --button-fg: #ffffff;
+  --button-bg: #952aff;
+  --button-hover-bg: #9224ff;
+  --default-button-bg: #272b32;
+  --default-button-hover-bg: #4d545e;
+  --close-button-bg: #868d97;
+  --close-button-hover-bg: #4d545e;
+  --delete-button-bg: #d7263d;
+  --delete-button-hover-bg: #b01f32;
+
+  /* панель действий над списком */
+  --object-tools-bg: #272b32;
+  --object-tools-fg: #ffffff;
+  --object-tools-hover-bg: #952aff;
+
+  /* сообщения */
+  --message-success-bg: #e4e4e4;
+  /* единственное место с #FFC700: предупреждение — функциональный сигнал,
+     а не элемент фирменной идентификации */
+  --message-warning-bg: rgba(255, 199, 0, 0.24);
+  --message-error-bg: rgba(215, 38, 61, 0.12);
+  --error-fg: #d7263d;
+
+  /* шрифты: Verdana Medium, как в самом справочнике */
+  --font-family-primary: "Verdana Medium", "Verdana Pro Medium", Verdana, Geneva, sans-serif;
+  /* Bold — отступление от брендбука (там только Regular и Medium),
+     сделано ради читаемости плотных таблиц */
+  /* артикулы: моноширинный, чтобы знаки вставали друг под друга */
+  --font-family-data: "Roboto Mono", ui-monospace, SFMono-Regular, monospace;
+  --tracking-data: 0.04em;
+}
+
+/* Django умеет тёмную тему, но фирменный стиль светлый —
+   держим один и тот же вид при любых системных настройках. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --body-bg: #f0f0f0;
+    --body-fg: #272b32;
+    --darkened-bg: #f0f0f0;
+    --selected-row: #e4e4e4;
+    --hairline-color: #ececee;
+    --border-color: #e0e0e2;
+  }
+}
+
+/* ---- текст: плотнее и контрастнее, как на основных страницах --------- */
+
+body, td, th, input, select, textarea, .button, a.button, .quiet, .help,
+.module h2, .module caption, #branding h1, .submit-row input, label {
+  font-weight: 700;
+}
+body { font-size: 15px; }
+#changelist table, .form-row, .module { font-size: 14px; }
+.help, .quiet, small { color: var(--body-quiet-color); }
+
+/* ---- пластика: скругления и воздух, как на основных страницах -------- */
+
+#header {
+  padding: 14px 24px;
+  border-bottom: 2px solid #952aff;
+}
+#branding h1 { font-weight: 700; letter-spacing: -0.01em; line-height: 1; margin: 0; }
+#branding h1 a:link, #branding h1 a:visited { color: #fff; border: 0; }
+/* минимальный размер логотипа на экране — 130 пикс. по длине (брендбук 2.1) */
+#branding h1 .brand-logo { display: block; width: 148px; min-width: 130px; height: auto; }
+#branding .subline {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #c2c7cd;
+  font-weight: 400;
+}
+#user-tools a { border-bottom-color: rgba(255, 255, 255, 0.35); }
+/* переключатель тёмной темы отключён вместе с самой темой */
+.theme-toggle { display: none; }
+
+div.breadcrumbs { padding: 12px 24px; border: 0; }
+
+.module,
+.dashboard #content .module,
+#changelist,
+#content-main .inline-group {
+  border-radius: 20px;
+  overflow: hidden;
+}
+.module > h2, .module caption, .inline-group h2 {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 14px 18px;
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+  border-radius: 100px;
+  padding: 9px 18px;
+  font-weight: 700;
+  border: 0;
+}
+.object-tools a { border-radius: 100px; letter-spacing: 0.04em; }
+.button, input[type=submit], .object-tools a { transition: filter 120ms ease-out; }
+.button:hover, input[type=submit]:hover, .object-tools a:hover { filter: brightness(0.92); }
+
+#changelist-filter { border-radius: 20px; }
+#changelist-search input[type="text"],
+input[type="text"], input[type="password"], input[type="email"],
+input[type="url"], input[type="number"], textarea, select {
+  border-radius: 12px;
+  border-color: #e0e0e2;
+  /* поля не наследуют шрифт от body — задаём явно */
+  font-family: var(--font-family-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+input:focus, textarea:focus, select:focus { border-color: #952aff; outline: 0; }
+
+#changelist table thead th {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+#changelist tbody tr:hover { background: #e9e9ea; }
+#changelist table thead th { position: sticky; top: 0; z-index: 5; }
+
+.submit-row { border-radius: 20px; padding: 16px 18px; }
+.paginator { border-radius: 0 0 20px 20px; }
+.messagelist li { border-radius: 12px; }
+
+/* моноширинный шрифт для артикулов в списках */
+#changelist table td.field-oy_pn,
+#changelist table td.field-vendor_pn,
+#changelist table td.field-gbt_pn,
+#changelist table td.field-oy_id {
+  font-family: var(--font-family-data);
+  letter-spacing: var(--tracking-data);
+}

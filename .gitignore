@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.env
+staticfiles/
+db.sqlite3
+.venv/
+
+# загруженные изображения плат: живут в томе, а не в репозитории
+media/
+pages/

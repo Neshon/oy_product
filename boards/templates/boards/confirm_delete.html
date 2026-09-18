@@ -1,0 +1,45 @@
+{% extends "components/base.html" %}
+
+{% block title %}Удаление платы {{ board.base_pn }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow"><a href="{% url 'boards:list' %}">Платы</a></div>
+  <div class="legend__row"><h1>Удалить плату?</h1></div>
+</div>
+
+<div class="panel" style="max-width:640px">
+  <div class="section__head">вместе с платой удалятся все её ревизии и состав</div>
+  <dl class="specs">
+    <div><dt>Номер платы</dt><dd>{{ board.base_pn }}</dd></div>
+    <div><dt>Наименование</dt><dd>{{ board.name|default:"—" }}</dd></div>
+    <div><dt>Ревизий</dt><dd>{{ board.revision_count }}</dd></div>
+    <div><dt>Строк состава</dt><dd>{{ board.item_count }}</dd></div>
+    {% if item %}
+      <div><dt>Позиция в изделиях</dt>
+        <dd><a href="{{ item.get_absolute_url }}">{{ item.oy_pn }}</a> — удалится вместе с платой</dd></div>
+    {% endif %}
+  </dl>
+
+  {% if used_in %}
+    <div class="hints">
+      <div><b>Удалить нельзя.</b> Плата входит в состав изделий:</div>
+      <div class="filterbar">
+        {% for line in used_in %}
+          <a class="chip chip--table" href="{{ line.parent.get_absolute_url }}">{{ line.parent.oy_pn }}</a>
+        {% endfor %}
+      </div>
+      <div class="muted">Сначала уберите её из их состава.</div>
+    </div>
+    <div class="formbar">
+      <a class="btn" href="{{ board.get_absolute_url }}">Назад к плате</a>
+    </div>
+  {% else %}
+    <form class="formbar" method="post">
+      {% csrf_token %}
+      <button class="btn btn--danger" type="submit">Удалить безвозвратно</button>
+      <a class="btn btn--ghost" href="{{ board.get_absolute_url }}">Оставить</a>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

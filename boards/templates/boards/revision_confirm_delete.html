@@ -1,0 +1,44 @@
+{% extends "components/base.html" %}
+
+{% block title %}Удаление ревизии {{ revision.oy_pn }} · Платы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> ·
+    <a href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a> ·
+    <a href="{{ revision.get_absolute_url }}">{{ revision.oy_pn|default:revision.label }}</a>
+  </div>
+  <div class="legend__row"><h1>Удалить ревизию?</h1></div>
+</div>
+
+<div class="panel" style="max-width:640px">
+  <div class="section__head">
+    вместе с ревизией удалятся её состав и чек-листы
+    {% if revision.is_current %}<span class="chip chip--replacement">текущая ревизия</span>{% endif %}
+  </div>
+  <dl class="specs">
+    <div><dt>OY P/N</dt><dd>{{ revision.oy_pn|default:"—" }}</dd></div>
+    <div><dt>Ревизия платы</dt><dd>{{ revision.board_rev|default:"—" }}</dd></div>
+    <div><dt>Ревизия BOM</dt><dd>{{ revision.bom_rev|default:"—" }}</dd></div>
+    <div><dt>Исполнение</dt><dd>{{ revision.variant|default:"—" }}</dd></div>
+    <div><dt>Строк состава</dt><dd>{{ revision.item_count }}</dd></div>
+    <div><dt>Заполнено в чек-листах</dt><dd>{{ checklist_done }}</dd></div>
+    <div><dt>BOM загружен</dt>
+      <dd>{{ revision.imported_at|date:"d.m.Y H:i"|default:"—" }}{% if revision.imported_by %} · {{ revision.imported_by }}{% endif %}</dd></div>
+  </dl>
+
+  {% if revision.is_current %}
+    <div class="hints">
+      Это текущая ревизия платы. После удаления текущей станет следующая по
+      номеру, а если других ревизий нет — плата останется без состава.
+    </div>
+  {% endif %}
+
+  <form class="formbar" method="post">
+    {% csrf_token %}
+    <button class="btn btn--danger" type="submit">Удалить безвозвратно</button>
+    <a class="btn btn--ghost" href="{{ revision.get_absolute_url }}">Оставить</a>
+  </form>
+</div>
+{% endblock %}

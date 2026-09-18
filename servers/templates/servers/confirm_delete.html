@@ -1,0 +1,34 @@
+{% extends "components/base.html" %}
+
+{% block title %}Удаление {{ item.oy_pn }} · Серверы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">удаление позиции</div>
+  <div class="legend__row"><h1 class="dbname">{{ item.oy_pn }}</h1></div>
+</div>
+
+<div class="panel">
+  <div class="section__head">удалить позицию?</div>
+  <div class="hints">
+    {% if used_in %}
+      <p>Позиция входит в состав других изделий, поэтому удалить её нельзя:</p>
+      <div class="filterbar">
+        {% for row in used_in %}
+          <a class="chip chip--table" href="{{ row.item.get_absolute_url }}">{{ row.item.oy_pn }}</a>
+        {% endfor %}
+      </div>
+      <p class="muted">Сначала уберите её из их состава.</p>
+      <a class="btn" href="{{ item.get_absolute_url }}">Назад</a>
+    {% else %}
+      <p>Вместе с позицией удалятся её строки состава. Сами вложенные
+        позиции останутся — удаляется только запись об этой.</p>
+      <form method="post">
+        {% csrf_token %}
+        <button class="btn btn--danger" type="submit">Удалить</button>
+        <a class="btn btn--ghost" href="{{ item.get_absolute_url }}">Отменить</a>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

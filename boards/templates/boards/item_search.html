@@ -1,0 +1,62 @@
+{% extends "components/base.html" %}
+
+{% block title %}Поиск по составам: {{ term }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">составы плат</div>
+  <div class="legend__row">
+    <h1>{% if term %}<span class="mono">{{ term }}</span>{% else %}Что ищем?{% endif %}</h1>
+    <span class="legend__count">{{ page.paginator.count }} строк</span>
+  </div>
+</div>
+
+<div class="panel">
+  <form class="toolbar" method="get">
+    <input class="field field--search" type="search" name="q" value="{{ term }}"
+           placeholder="Vendor P/N, GBT P/N, OY ID, описание, обозначение на плате"
+           autocomplete="off">
+    <button class="btn" type="submit">Найти</button>
+  </form>
+
+  {% if page.object_list %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Плата</th>
+            <th>Vendor P/N</th>
+            <th>Vendor</th>
+            <th>GBT P/N</th>
+            <th>Description</th>
+            <th>Part References</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page.object_list %}
+            <tr data-href="{{ item.revision.board.get_absolute_url }}">
+              <td class="pn"><a class="rowlink" href="{{ item.revision.board.get_absolute_url }}">{{ item.revision.board.base_pn }}</a></td>
+              <td class="pn">{{ item.vendor_pn|default:"—" }}</td>
+              <td class="pn">{{ item.vendor|default:"—" }}</td>
+              <td class="pn">{{ item.gbt_pn|default:"—" }}</td>
+              <td class="desc">{{ item.description|default:"—" }}</td>
+              <td class="desc">{{ item.references|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "_pagination.html" with only_pages=1 %}
+  {% elif term %}
+    <div class="empty">
+      <h2>Совпадений нет</h2>
+      <p class="muted">Попробуйте часть номера без разделителей или имя производителя.</p>
+    </div>
+  {% else %}
+    <div class="empty">
+      <h2>Введите запрос в строке поиска</h2>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

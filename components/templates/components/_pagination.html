@@ -1,0 +1,24 @@
+{% load components_extras %}
+<div class="pager">
+  {% if page.has_previous %}
+    <a class="btn" href="{% page_url 1 %}">« первая</a>
+    <a class="btn" href="{% page_url page.previous_page_number %}">назад</a>
+  {% else %}
+    <span class="btn" aria-disabled="true" style="opacity:.4">« первая</span>
+  {% endif %}
+
+  <span class="pager__pos">стр. {{ page.number }} из {{ paginator.num_pages }}</span>
+
+  {% if page.has_next %}
+    <a class="btn" href="{% page_url page.next_page_number %}">вперёд</a>
+    <a class="btn" href="{% page_url paginator.num_pages %}">последняя »</a>
+  {% else %}
+    <span class="btn" aria-disabled="true" style="opacity:.4">последняя »</span>
+  {% endif %}
+
+  {% if not only_pages %}
+    <span class="pager__spacer"></span>
+    <span class="muted">всего {{ paginator.count }}</span>
+    {% include "components/_page_size.html" %}
+  {% endif %}
+</div>

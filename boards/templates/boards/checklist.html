@@ -1,0 +1,73 @@
+{% extends "components/base.html" %}
+
+{% block title %}Чек-листы {{ revision.oy_pn }} · Платы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> ·
+    <a href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a> ·
+    <a href="{{ revision.get_absolute_url }}">{{ revision.oy_pn|default:revision.label }}</a> ·
+    чек-листы
+  </div>
+  <div class="legend__row">
+    <h1>Чек-листы ревизии</h1>
+    <span class="legend__actions">
+      <a class="btn btn--ghost" href="{{ revision.get_absolute_url }}">Отменить</a>
+      <button class="btn btn--primary" type="submit" form="checklist-form">Сохранить</button>
+    </span>
+  </div>
+</div>
+
+<form method="post" novalidate id="checklist-form">
+  {% csrf_token %}
+
+  <div class="stack">
+    {% for group in groups %}
+      <div class="panel">
+        <div class="section__head">
+          {{ group.title }}
+          <span class="muted">{{ group.done }} из {{ group.rows|length }}</span>
+        </div>
+        <div class="table-wrap">
+          <table class="grid">
+            <thead>
+              <tr>
+                <th>Название документа</th>
+                <th style="width:170px">Наличие документа</th>
+                <th>Комментарий</th>
+                <th>Ссылка</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in group.rows %}
+                  <tr>
+                    <td class="desc">
+                      {{ row.title }}
+                      {% comment %}
+                        Формат, зона ответственности и примечание — справка о
+                        самом документе, одна на все ревизии. Правке они не
+                        подлежат и колонок больше не занимают.
+                      {% endcomment %}
+                      {% if row.details %}<div class="rowmeta">{{ row.details }}</div>{% endif %}
+                    </td>
+                    <td>{{ row.fields.0 }}</td>
+                    <td>{{ row.fields.1 }}</td>
+                    <td>{{ row.fields.2 }}</td>
+                  </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</form>
+
+<p class="formnote">
+  Названия документов, форматы и зоны ответственности приходят из шаблона и
+  общие для всех ревизий — здесь правится только готовность. Пополнить
+  шаблон можно в <code>boards/checklists.py</code>: новая строка появится
+  сразу у всех ревизий, включая заведённые давно.
+</p>
+{% endblock %}

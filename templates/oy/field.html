@@ -1,0 +1,34 @@
+{% comment %}
+Одна строка формы: подпись, поле, ошибка, подсказка.
+
+Это единственный шаблон нашего пакета crispy-forms («oy»). Пакет свой, а не
+bootstrap5 или tailwind, по той же причине, по которой мы не берём сам
+фреймворк: чужая разметка и чужие классы пришлось бы переопределять поверх
+брендбука, а здесь достаточно одного файла с нашими классами.
+
+Раньше этот блок был скопирован в восьми шаблонах и уже начал расходиться:
+где-то звёздочка обязательного поля есть, где-то нет; где-то ошибка стоит
+до подсказки, где-то после; в одном месте `formrow has-error`, в другом
+`formrow--wide`. Теперь он один.
+
+Класс `field` ставится не здесь, а тегом crispy_field — он берёт его из
+CRISPY_CLASS_CONVERTERS по типу виджета (см. config/settings.py). Поэтому в
+формах больше не пишут attrs={"class": "field"} для каждого поля.
+
+`extra_row_class` — дополнительный класс строки, если он нужен конкретному
+полю: {{ field|as_crispy_field }} его не передаёт, зато передаёт
+{% crispy_field %} через контекст включающего шаблона.
+{% endcomment %}
+{% load crispy_forms_field %}
+<div class="formrow{% if field.errors %} has-error{% endif %}{% if extra_row_class %} {{ extra_row_class }}{% endif %}">
+  {% if field.label %}
+    <label for="{{ field.id_for_label }}">
+      {{ field.label }}{% if field.field.required %}<span class="req" title="Обязательное поле">*</span>{% endif %}
+    </label>
+  {% endif %}
+
+  {% crispy_field field %}
+
+  {% if field.errors %}<div class="errors">{{ field.errors|striptags }}</div>{% endif %}
+  {% if field.help_text %}<div class="hint">{{ field.help_text }}</div>{% endif %}
+</div>

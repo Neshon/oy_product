@@ -1,0 +1,92 @@
+{% extends "components/base.html" %}
+
+{% block title %}Удаление {{ object.display_title }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'components:list' category.slug %}">{{ category.table }}</a> · {{ category.title }}
+  </div>
+  <div class="legend__row"><h1>Удалить компонент?</h1></div>
+</div>
+
+{% if risky %}
+  <div class="alert alert--error" role="alert">
+    <b>Компонент используется.</b>
+    Удаление не тронет ни платы, ни аналоги — но связь с ними потеряется,
+    и восстановить её можно будет только заведя компонент заново.
+  </div>
+{% endif %}
+
+<div class="cols">
+  <div class="panel">
+    <div class="section__head">запись будет удалена из таблицы {{ category.table }}</div>
+    <dl class="specs">
+      <div><dt>Vendor PN</dt><dd>{{ object.vendor_pn|default:"—" }}</dd></div>
+      <div><dt>OY ID</dt><dd>{{ object.oy_id|default:"—" }}</dd></div>
+      <div><dt>GBT PN</dt><dd>{{ object.gbt_pn|default:"—" }}</dd></div>
+      <div><dt>Описание</dt><dd>{{ object.description|default:"—" }}</dd></div>
+    </dl>
+
+    <form class="formbar" method="post">
+      {% csrf_token %}
+      {% if risky %}
+        <label style="display:flex;gap:8px;align-items:center;font-size:13px">
+          <input type="checkbox" name="confirm" value="1" required>
+          Понимаю последствия, всё равно удалить
+        </label>
+        <span class="toolbar__spacer"></span>
+      {% endif %}
+      <button class="btn btn--danger" type="submit">Удалить безвозвратно</button>
+      <a class="btn btn--ghost" href="{{ object.get_absolute_url }}">Оставить как есть</a>
+    </form>
+  </div>
+
+  <div class="colstack">
+    <div class="panel">
+      <div class="section__head">
+        применяется на платах{% if boards %} · {{ boards|length }}{% endif %}
+      </div>
+      {% if boards %}
+        <table class="grid grid--compact">
+          <thead>
+            <tr><th>Плата</th><th>Ревизии</th></tr>
+          </thead>
+          <tbody>
+            {% for entry in boards %}
+              <tr data-href="{{ entry.board.get_absolute_url }}">
+                <td class="pn">
+                  <a class="rowlink" href="{{ entry.board.get_absolute_url }}">{{ entry.board.base_pn }}</a>
+                  {% if entry.current %}<span class="chip chip--table">текущий</span>{% endif %}
+                </td>
+                <td class="desc">{{ entry.revisions|join:", " }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="pager">
+          <span class="muted">строк в составах: {{ board_rows }}.
+            После удаления они останутся, но покажут данные из файла и будут
+            помечены <span class="chip">?</span>.</span>
+        </div>
+      {% else %}
+        <div class="tagcloud"><span class="muted">Ни в одном загруженном BOM не встречается.</span></div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="section__head">аналоги по OY ID{% if analogs %} · {{ analogs }}{% endif %}</div>
+      <div class="tagcloud">
+        {% if analogs %}
+          <span class="muted">
+            В парной таблице {{ analogs }} записей с этим OY ID. Они не
+            удалятся, но останутся без оригинала — искать замену будет не к чему.
+          </span>
+        {% else %}
+          <span class="muted">Аналогов нет.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

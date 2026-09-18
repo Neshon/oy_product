@@ -1,0 +1,82 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}{{ category.title }} · Библиотека компонентов{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">{{ category.title }}</div>
+  <div class="legend__row">
+    <h1 class="dbname">{{ category.table }}</h1>
+    {% if category.replacement %}<span class="chip chip--replacement">замена</span>{% endif %}
+    {% if category.read_only %}<span class="chip">только чтение</span>{% endif %}
+    <span class="legend__count">{{ paginator.count }} записей</span>
+    <span class="legend__actions">
+      <a class="btn" href="{{ export_url }}">Выгрузить CSV</a>
+      {% if can_edit_components and not category.read_only and not category.replacement %}
+        <a class="btn btn--primary" href="{% url 'components:create' category.slug %}">Добавить компонент</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="panel">
+  <form class="toolbar" method="get" id="list-filters">
+    {{ filter_form.q }}
+    {% for field in filter_form %}
+      {% if field.name != 'q' %}{{ field }}{% endif %}
+    {% endfor %}
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <input type="hidden" name="dir" value="{{ dir }}">
+    <button class="btn btn--primary" type="submit">Применить</button>
+    {% if request.GET %}
+      <a class="btn btn--ghost" href="{% url 'components:list' category.slug %}">Сбросить</a>
+    {% endif %}
+    {% include "_page_size.html" %}
+  </form>
+
+  {% if rows %}
+  <div class="table-wrap">
+    <table class="grid grid--list">
+      <thead>
+        <tr>
+          {% for name, label in columns %}
+            <th><a href="{% sort_url name %}" data-state="{% sort_state name %}">{{ label }}</a></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr data-href="{{ row.obj.get_absolute_url }}">
+            {% for name, value in row.cells %}
+              <td class="{% if name == 'description' %}desc{% else %}pn{% endif %}"
+                  title="{{ value|default_if_none:'' }}">
+                {% if forloop.first %}
+                  {# ссылка нужна для клавиатуры и открытия в новой вкладке #}
+                  <a class="rowlink" href="{{ row.obj.get_absolute_url }}">{{ value|cell }}</a>
+                {% else %}{{ value|cell }}{% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% include "_pagination.html" with only_pages=1 %}
+
+  {% else %}
+    <div class="empty">
+      <h2>Ничего не нашлось</h2>
+      <p class="muted">Смягчите фильтры или измените запрос{% if can_edit_components and not category.read_only and not category.replacement %} — либо заведите новый компонент{% endif %}.</p>
+      {% if can_edit_components and not category.read_only and not category.replacement %}
+        <a class="btn btn--primary" href="{% url 'components:create' category.slug %}">Добавить компонент</a>
+      {% endif %}
+      {% if category.replacement %}
+        <p class="muted">Замены заводятся из карточки основного компонента —
+           в блоке «аналоги по OY ID».</p>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

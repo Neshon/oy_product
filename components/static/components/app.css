@@ -1,0 +1,1934 @@
+/* Библиотека компонентов OpenYard — интерфейс.
+   Мини-брендбук v1.0 (26.09.2024): #952AFF и #9224FF — акценты,
+   #272B32 — тексты и тёмные блоки, #F0F0F0 / #E4E4E4 — фоны,
+   Verdana Medium в интерфейсе, Roboto Mono — для артикулов.
+   Жёлтый #FFC700 в интерфейсе не используется: брендбук закрепляет
+   его за идентификацией сотрудников и HR-коммуникациями.
+
+   Структура файла:
+   1. токены   2. база   3. каркас   4. шапка   5. навигация
+   6. заголовки разделов   7. кнопки и поля   8. таблицы
+   9. карточка   10. формы   10a. выпадающий список   11. главная
+   11a. страница входа   11b. просмотр снимка   11c. вкладки
+   12. тосты
+   13. адаптив */
+
+/* ============ 1. Токены ================================================ */
+
+:root {
+  /* палитра */
+  --purple: #952aff;
+  --purple-2: #9224ff;
+  --purple-soft: rgba(149, 42, 255, 0.1);
+  /* контур подсветки: сиреневый заметнее фона, но не спорит с текстом */
+  --purple-ring: rgba(149, 42, 255, 0.22);
+  --fault: #d7263d;
+  --fault-soft: rgba(215, 38, 61, 0.1);
+
+  /* Служебные цвета состояний. В брендбуке их нет — он описывает
+     фирменные цвета, а не индикацию, — поэтому взяты приглушённые
+     оттенки, которые не спорят с сиреневым. Жёлтый не используется:
+     брендбук закрепляет его за HR-коммуникациями. */
+  --ok: #16794c;
+  --ok-soft: rgba(22, 121, 76, 0.12);
+  --info: #2a639f;
+  --info-soft: rgba(42, 99, 159, 0.12);
+
+  /* поверхности и текст — светлая тема */
+  --bg: #f0f0f0;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --hover: #e9e9ea;
+  /* поле ввода в форме: на полтона отличается от карточки, чтобы было
+     видно, куда писать, — но не настолько, чтобы форма зарябила */
+  --field: #f5f6f7;
+  --ink: #272b32;
+  --ink-2: #3a424b;
+  --muted: #616a75;
+  --line: #e4e4e6;
+  --line-soft: #ededef;
+  --on-accent: #ffffff;
+
+  /* глубина: тонкий контур вместо тяжёлых теней */
+  --ring: 0 0 0 1px rgba(39, 43, 50, 0.07);
+  --shadow-sm: 0 1px 2px rgba(39, 43, 50, 0.06);
+  --shadow-md: 0 8px 24px rgba(39, 43, 50, 0.12);
+  --shadow-lg: 0 16px 48px rgba(39, 43, 50, 0.18);
+
+  /* шаг сетки */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 32px;
+
+  /* скругления */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --pill: 999px;
+
+  /* типографика */
+  /* «Verdana Medium» — отдельная гарнитура, она есть не везде: если её нет,
+     подхватится обычная Verdana, и рисунок букв останется тем же, изменится
+     только насыщенность. Geneva — её ближайший системный родственник. */
+  --font-ui: "Verdana Medium", "Verdana Pro Medium", Verdana, Geneva, sans-serif;
+  /* Артикулы, OY ID и имена таблиц. Моноширинный: в колонке знаки встают
+     друг под друга, и различить «0» и «O», «1» и «l» в чужом артикуле
+     проще — на глаз, не вчитываясь. */
+  --font-data: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Разрядка артикулов. Roboto набирает плотно, а в артикуле важен каждый
+     знак: с просветом «GRM188R71H104KA93D» читается по одному символу, а
+     не сплошной строкой. Идёт всюду вместе с --font-data. */
+  --tracking-data: 0.04em;
+  /* Разрядка интерфейсного текста. Она заводилась под узкую гарнитуру;
+     Verdana широкая сама по себе, и добавлять ей просвета не нужно —
+     отсюда ноль. Если строки покажутся тесными, поднимать здесь: 0.02em
+     заметно просторнее. Заголовки и подписи, у которых letter-spacing
+     задан свой, этим не задеваются. */
+  --tracking: 0;
+  --weight-medium: 700;
+  --weight-body: 500;
+
+  /* движение */
+  --fast: 120ms cubic-bezier(0.2, 0, 0.2, 1);
+  --slow: 240ms cubic-bezier(0.2, 0, 0.2, 1);
+
+  --rail: 268px;
+  --topbar: 60px;
+
+  color-scheme: light;
+}
+
+/* тёмная тема — в брендбуке это дополнительное цветовое решение (2.4) */
+:root[data-theme="dark"] {
+  --bg: #1a1e23;
+  --surface: #23282e;
+  --surface-2: #272c33;
+  --hover: #2e343b;
+  /* на тёмном поле ввода отличаются в другую сторону — темнее карточки:
+     углублённое поле читается лучше, чем светлое пятно */
+  --field: #1e2329;
+  --ink: #eef0f2;
+  --ink-2: #c3c9d0;
+  --muted: #8d97a2;
+  --line: #333a42;
+  --line-soft: #2c323a;
+  --purple: #a95cff;
+  --purple-2: #9a3dff;
+  --purple-soft: rgba(169, 92, 255, 0.16);
+  --purple-ring: rgba(169, 92, 255, 0.32);
+  /* На тёмном фоне те же цвета нужны светлее, иначе текст не читается.
+     Красный тут светлеет впервые: #d7263d на тёмном сером даёт контраст
+     около 2.4 — этого мало и для чипа «удалён», и для текста ошибок,
+     который жил с ним и раньше. */
+  --fault: #f87f92;
+  --fault-soft: rgba(248, 127, 146, 0.16);
+  --ok: #57c08d;
+  --ok-soft: rgba(87, 192, 141, 0.16);
+  --info: #7bb0f0;
+  --info-soft: rgba(123, 176, 240, 0.16);
+
+  --ring: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+
+  color-scheme: dark;
+}
+
+/* ============ 2. База =================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: var(--weight-body);
+  letter-spacing: var(--tracking);
+  line-height: 1.25;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--purple); text-decoration: none; transition: color var(--fast); }
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection { background: var(--purple-soft); }
+
+.muted { color: var(--muted); }
+.mono {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-variant-numeric: tabular-nums;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* аккуратные полосы прокрутки в областях данных */
+.table-wrap, .rail { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.table-wrap::-webkit-scrollbar, .rail::-webkit-scrollbar { width: 10px; height: 10px; }
+.table-wrap::-webkit-scrollbar-thumb, .rail::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: var(--pill);
+}
+
+/* ============ 3. Каркас ================================================= */
+
+.shell {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  width: 100%;
+}
+
+.main { flex: 1; min-width: 0; }
+
+/* ============ 4. Шапка ================================================== */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  min-height: var(--topbar);
+  padding: 0 var(--s-5);
+  background: #272b32;
+  color: #eef0f2;
+  border-bottom: 2px solid var(--purple);
+}
+
+.topbar__side {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: 1 1 0;
+  min-width: 0;
+}
+.topbar__side--end { justify-content: flex-end; }
+
+.topbar__logo { display: flex; align-items: center; flex: 0 0 auto; padding: var(--s-2) 0; }
+.topbar__logo:hover { text-decoration: none; }
+.topbar__logo img { display: block; width: 148px; min-width: 130px; height: auto; }
+
+.topbar__section {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #a8b0b8;
+  white-space: nowrap;
+  padding-left: 20px;
+  border-left: 1px solid #3a414b;
+}
+
+.topbar__search { position: relative; flex: 0 1 clamp(280px, 34vw, 620px); }
+.topbar__search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 76px 0 var(--s-4);
+  border: 1px solid #3a414b;
+  border-radius: var(--pill);
+  background: #31363e;
+  color: #f2f3f4;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+  transition: border-color var(--fast), background var(--fast);
+}
+.topbar__search input::placeholder { color: #97a0a9; }
+.topbar__search input:focus { border-color: var(--purple); background: #363c45; outline: none; }
+
+/* подсказка о горячей клавише — узнаваемый приём современных консолей */
+.topbar__hint {
+  position: absolute;
+  right: var(--s-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: var(--s-1);
+  pointer-events: none;
+}
+.topbar__hint kbd {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-size: 10px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #454d57;
+  background: #272c33;
+  color: #97a0a9;
+}
+.topbar__search input:focus ~ .topbar__hint { opacity: 0; }
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 13px;
+  color: #a8b0b8;
+  white-space: nowrap;
+}
+.topbar__user strong { color: #fff; font-weight: var(--weight-medium); }
+.topbar__user a { color: #eef0f2; }
+.topbar__user form { display: inline-flex; }
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--pill);
+  border: 1px solid #3a414b;
+  background: transparent;
+  color: #eef0f2;
+  cursor: pointer;
+  transition: border-color var(--fast), background var(--fast);
+}
+.icon-btn:hover { border-color: var(--purple); background: rgba(149, 42, 255, 0.16); }
+.icon-btn svg { width: 16px; height: 16px; }
+
+.topbar__logout {
+  border: 1px solid #3a414b;
+  background: transparent;
+  color: #eef0f2;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: var(--weight-body);
+  padding: 7px 14px;
+  border-radius: var(--pill);
+  cursor: pointer;
+  transition: border-color var(--fast), color var(--fast);
+}
+.topbar__logout:hover { border-color: var(--purple); color: #fff; }
+
+/* ============ 5. Навигация ============================================== */
+
+.rail {
+  width: var(--rail);
+  flex: 0 0 var(--rail);
+  padding: var(--s-4) var(--s-3);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--ring);
+  position: sticky;
+  top: calc(var(--topbar) + var(--s-4));
+  max-height: calc(100vh - var(--topbar) - var(--s-5));
+  overflow-y: auto;
+}
+
+.rail__title {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 var(--s-3) var(--s-2);
+}
+
+.rail__link {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  margin-bottom: 2px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  transition: background var(--fast), color var(--fast);
+}
+.rail__link:hover { background: var(--hover); color: var(--ink); text-decoration: none; }
+.rail__link > span {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-weight: var(--weight-medium);
+  font-size: 13px;
+}
+.rail__link small { font-size: 11px; color: var(--muted); text-align: right; }
+
+.rail__link.is-active {
+  background: var(--purple-soft);
+  color: var(--purple);
+  position: relative;
+}
+.rail__link.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 3px;
+  border-radius: var(--pill);
+  background: var(--purple);
+}
+.rail__link.is-active small { color: var(--ink-2); }
+
+.rail__divider { height: 1px; background: var(--line); margin: var(--s-3) var(--s-3); }
+
+/* ============ 6. Заголовки разделов ===================================== */
+
+.legend { margin-bottom: var(--s-4); }
+.legend__eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.legend__eyebrow a { color: var(--muted); }
+.legend__eyebrow a:hover { color: var(--purple); }
+.legend__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-top: var(--s-2);
+}
+.legend h1 {
+  font-size: 26px;
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin: 0;
+  padding-bottom: 2px;
+}
+.legend h1.dbname {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-size: 24px;
+}
+.legend__count { color: var(--muted); font-size: 13px; }
+.legend__actions { margin-left: auto; display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  padding: 4px 10px;
+  border-radius: var(--pill);
+  color: var(--ink-2);
+  background: var(--hover);
+}
+.chip--replacement { color: var(--on-accent); background: var(--purple); }
+.chip--table {
+  color: var(--purple);
+  background: var(--purple-soft);
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+}
+
+/* Тип операции в истории изменений — свой цвет у каждого события.
+   Цвет здесь только помогает: подпись в чипе есть всегда, поэтому смысл
+   не теряется ни в чёрно-белой печати, ни у тех, кто различает цвета
+   иначе. Класс выбирает модель (ComponentChange.chip_class). */
+.chip--event { font-size: 12px; padding: 3px 8px; white-space: nowrap; }
+.chip--added { color: var(--ok); background: var(--ok-soft); }
+.chip--edited { color: var(--info); background: var(--info-soft); }
+.chip--gone { color: var(--fault); background: var(--fault-soft); }
+.chip--dup { color: var(--purple); background: var(--purple-soft); }
+
+/* ============ 7. Кнопки и поля ========================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--fast), border-color var(--fast), transform var(--fast);
+}
+.btn:hover { border-color: var(--ink-2); text-decoration: none; color: var(--ink); }
+.btn:active { transform: translateY(1px); }
+.btn--primary {
+  background: var(--purple);
+  border-color: var(--purple);
+  color: var(--on-accent);
+  font-weight: var(--weight-medium);
+}
+.btn--primary:hover { filter: brightness(0.92); color: var(--on-accent); }
+.btn--danger { color: var(--fault); border-color: rgba(215, 38, 61, 0.35); }
+.btn--danger:hover { background: rgba(215, 38, 61, 0.08); border-color: var(--fault); color: var(--fault); }
+.btn--ghost { background: transparent; }
+.btn[disabled], .btn[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+
+.field {
+  height: 36px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--surface);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: var(--weight-body);
+  line-height: 1.25;
+  color: var(--ink);
+  max-width: 100%;
+  transition: border-color var(--fast), box-shadow var(--fast);
+}
+.field:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-soft); outline: none; }
+/* Недопустимые символы видны сразу, ещё до отправки. Правило действует
+   только там, где задан pattern (поля Allegro): форма отправляется с
+   novalidate, так что сохранению это не мешает — проверяет сервер, а
+   подсветка лишь избавляет от лишнего круга «сохранил — не вышло». */
+.field[pattern]:invalid { border-color: var(--fault); }
+.field[pattern]:invalid:focus { border-color: var(--fault); box-shadow: 0 0 0 3px var(--fault-soft); }
+.field::placeholder { color: var(--muted); }
+.field--search { width: 280px; }
+/* фильтр показывает своё название целиком, а выбранные значения — сколько
+   поместится; предел нужен, чтобы одна длинная строка не занимала всю
+   панель, дальше работает многоточие */
+.field--select { max-width: 300px; }
+/* без скрипта фильтр остаётся системным списком с множественным выбором —
+   ему нужна своя высота, иначе он схлопнется в одну строку */
+select[multiple].field { height: auto; min-height: 36px; padding: var(--s-2); }
+/* выбранный фильтр видно по цвету */
+.field--select:has(option[value=""]:not(:checked)) {
+  border-color: var(--purple);
+  color: var(--purple);
+}
+.field--area {
+  height: auto;
+  padding: var(--s-2) var(--s-3);
+  width: 100%;
+  border-radius: var(--r-md);
+  line-height: 1.35;
+  resize: vertical;
+}
+select.field { padding-right: var(--s-2); }
+
+/* ============ 8. Панели и таблицы ======================================= */
+
+.panel {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--ring);
+  overflow: hidden;
+}
+
+/* Колонка блоков с одинаковым просветом. Отступ живёт на контейнере, а не
+   на самой панели: панели встречаются и внутри сеток со своим gap, и там
+   собственный margin давал бы двойной зазор. */
+.stack { display: grid; gap: var(--s-4); }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  align-items: center;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.toolbar__spacer { flex: 1; }
+/* Правый угол панели. Прижимает только в .toolbar: в подвале со страницами
+   этот же блок идёт следом за «всего N» и отрывать его оттуда не нужно. */
+.toolbar__end { display: inline-flex; align-items: center; gap: var(--s-2); }
+.toolbar > .toolbar__end { margin-left: auto; }
+
+.filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.filterbar__label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.table-wrap {
+  overflow: auto;
+  max-height: calc(100vh - 18rem);
+  min-height: 220px;
+  /* Гасим только горизонтальное «протаскивание»: у широких таблиц оно
+     иначе срабатывает как жест «назад» в браузере. По вертикали цепочку
+     оставляем — иначе, докрутив таблицу до конца, страница перестаёт
+     реагировать на колесо, и это выглядит как зависание. */
+  overscroll-behavior-x: contain;
+}
+
+/* Таблица-отчёт: её читают сверху вниз вместе со страницей, а не листают
+   в окошке. Своей прокрутки у неё нет, поэтому и ловить колесо нечем. */
+.table-wrap--flow { max-height: none; min-height: 0; }
+
+table.grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+table.grid th, table.grid td {
+  padding: 9px var(--s-3);
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+  box-shadow: inset 0 -1px 0 var(--line-soft);
+}
+table.grid th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-2);
+  box-shadow: inset 0 -1px 0 var(--line);
+  font-weight: var(--weight-medium);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+table.grid th a { color: inherit; display: inline-flex; gap: 5px; align-items: center; }
+table.grid th a:hover { color: var(--purple); text-decoration: none; }
+table.grid th a::after { content: "↕"; opacity: 0.3; font-size: 10px; }
+table.grid th a[data-state="asc"]::after { content: "↑"; opacity: 1; color: var(--purple); }
+table.grid th a[data-state="desc"]::after { content: "↓"; opacity: 1; color: var(--purple); }
+
+table.grid tbody tr { transition: background var(--fast); }
+table.grid tbody tr:hover { background: var(--hover); }
+table.grid tbody tr[data-href] { cursor: pointer; }
+/* длинный список обозначений раскрывается по клику */
+.refs summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.refs summary::-webkit-details-marker { display: none; }
+.refs summary::after {
+  content: "показать";
+  font-family: var(--font-ui);
+  font-size: 11px;
+  color: var(--purple);
+}
+.refs[open] summary::after { content: "свернуть"; }
+.refs[open] summary { color: var(--muted); }
+.refs__full { margin-top: 6px; word-break: break-word; line-height: 1.4; }
+
+/* строки замен в составе платы — приглушённые, чтобы позиции читались группами */
+table.grid tbody tr.row--sub td { color: var(--ink-2); }
+table.grid tbody tr.row--sub td:first-child { box-shadow: inset 0 -1px 0 var(--line-soft); }
+
+/* первая колонка не уезжает при горизонтальной прокрутке */
+table.grid th:first-child,
+table.grid td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 6;
+  background: var(--surface);
+  box-shadow: inset 0 -1px 0 var(--line-soft);
+}
+table.grid th:first-child { background: var(--surface-2); z-index: 16; }
+table.grid tbody tr:hover td:first-child { background: var(--hover); }
+
+table.grid td.num, table.grid td.pn {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-variant-numeric: tabular-nums;
+  /* длинные пути подрезаются, полное значение — в подсказке */
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+table.grid td .rowlink { color: inherit; font-weight: var(--weight-medium); }
+table.grid td .rowlink:hover { color: var(--purple); text-decoration: none; }
+table.grid td.desc {
+  white-space: normal;
+  min-width: 420px;
+  max-width: 25vw;
+  color: var(--ink);
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  line-height: 1.4;
+}
+
+/* Список компонентов: описание в одну строку. Строки списка должны быть
+   одинаковой высоты — по такой таблице глаз идёт вниз ровно, а строки в
+   два этажа сбивают счёт. Длинное описание подрезается многоточием,
+   целиком оно есть в подсказке ячейки и в карточке. */
+table.grid--list td.desc {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* состав платы: текстовых колонок несколько, поэтому каждой отводится
+   меньше места, чем в списках компонентов с одним описанием */
+table.grid--bom td.desc { min-width: 200px; max-width: 320px; }
+/* обозначения переносятся по <wbr> после запятых, а не обрезаются */
+table.grid--bom td.desc wbr { line-height: 0; }
+table.grid--bom td.pn { max-width: 190px; }
+
+/* одинаковые колонки во всех группах результатов поиска */
+table.grid--fixed { table-layout: fixed; }
+table.grid--fixed td, table.grid--fixed th { overflow-wrap: anywhere; white-space: normal; }
+table.grid--fixed thead th { position: sticky; }
+
+/* компактная таблица в узкой колонке карточки */
+table.grid--compact th, table.grid--compact td { padding: var(--s-2) var(--s-3); }
+table.grid--compact td.desc { min-width: 0; max-width: 260px; font-size: 12px; }
+table.grid--compact td.pn { white-space: normal; word-break: break-word; max-width: none; }
+/* Чипы в компактной таблице ужимаются — но не чип операции в истории:
+   у него своя высота и он стоит в ячейке один, без текста слева, поэтому
+   отступ ему тоже не нужен. Селектор длинный намеренно: без :not() это
+   правило перебивает .chip--event по весу, и размер там не применялся. */
+table.grid--compact td .chip:not(.chip--event) {
+  font-size: 10px;
+  padding: 1px 7px;
+  margin-left: 6px;
+}
+
+.empty { padding: var(--s-6) var(--s-5); text-align: center; color: var(--ink-2); }
+.empty h2 { font-size: 17px; font-weight: var(--weight-medium); margin: 0 0 6px; }
+.empty p { margin: 0 0 var(--s-4); }
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.pager__pos { color: var(--ink-2); }
+.pager__spacer { flex: 1; }
+
+/* ============ 9. Карточка компонента ==================================== */
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--s-4); align-items: start; }
+.colstack { display: grid; gap: var(--s-4); }
+
+.section__head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--line);
+}
+
+dl.specs { margin: 0; }
+dl.specs > div {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: var(--s-4);
+  padding: 10px var(--s-5);
+  border-bottom: 1px solid var(--line-soft);
+  transition: background var(--fast);
+}
+dl.specs > div:last-child { border-bottom: 0; }
+dl.specs > div:hover { background: var(--surface-2); }
+dl.specs dt {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+dl.specs dd {
+  margin: 0;
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+/* Несколько пар «подпись — значение» внутри ячейки таблицы.
+
+   Так в список версий помещается десяток полей, которые по отдельности
+   заняли бы по колонке каждое и чаще всего пустовали.
+
+   Пара свёрстана flex, а не grid: у ячейки таблицы ширина зависит от
+   содержимого соседей, и grid с фиксированной колонкой подписи в ней
+   ведёт себя непредсказуемо — то обрезает, то роняет значение на
+   следующую строку. Flex просто разводит подпись и значение по краям,
+   а пунктир между ними показывает, что они относятся друг к другу:
+   так же читается спецификация на бумаге. */
+.rowfacts {
+  margin: 0;
+  display: grid;
+  /* auto-fit: в широкой ячейке пары встают в два столбца и высота строки
+     таблицы уменьшается вдвое, в узкой сами возвращаются в один */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 var(--s-5);
+  align-content: start;
+}
+.rowfacts > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line-soft);
+}
+/* последняя пара без черты: она упиралась бы в край ячейки */
+.rowfacts > div:last-child { border-bottom: 0; }
+.rowfacts dt {
+  flex: 0 0 auto;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rowfacts dd {
+  margin: 0;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: right;
+  /* значения здесь — номера и короткие слова; длинные переносим по словам,
+     чтобы строка таблицы не расползалась по ширине */
+  overflow-wrap: anywhere;
+}
+
+/* Справка о строке таблицы — под её названием.
+
+   Формат файла, зона ответственности и примечание одинаковы у всех ревизий
+   и занимали по колонке каждая: таблица растягивалась вдвое, а читали в ней
+   название и готовность. Мелким под названием они на месте и не мешают. */
+.rowmeta {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.tagcloud { padding: var(--s-4) var(--s-5); display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+/* История изменений: значение «было» и значение «стало».
+
+   Зачёркнутое и приглушённое против подсвеченного — разница читается и без
+   цвета, поэтому она не теряется ни в чёрно-белой печати, ни у тех, кто
+   различает цвета иначе. Подсветка — фирменный сиреневый, как и остальные
+   акценты; красный в палитре занят ошибками, и «было» им помечать нельзя:
+   прежнее значение не ошибка. */
+.diff {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-size: 13px;
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  word-break: break-word;
+}
+.diff--old {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  background: var(--surface-2);
+}
+.diff--new {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+  background: var(--purple-soft);
+  box-shadow: inset 0 0 0 1px var(--purple-ring);
+}
+/* пустое значение зачёркивать нечего — просто прочерк */
+.diff--none {
+  color: var(--muted);
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-size: 13px;
+}
+
+/* подпись изменившегося параметра — весом, чтобы строка читалась целиком */
+.grid .diff-label { font-weight: var(--weight-medium); }
+
+/* ============ 10. Формы ================================================= */
+
+.formgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* По вертикали шаг меньше общего шага сетки и намеренно вне неё: полей
+     в форме компонента под сотню, и на 16px форма растягивается сильнее,
+     чем помогает воздух между строками. По горизонтали шаг прежний —
+     там он разделяет колонки, а не строки. */
+  gap: 10px var(--s-5);
+  padding: var(--s-5);
+}
+.formrow label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+/* значения в форме — те же данные, что в таблицах: тот же шрифт и разрядка */
+.formrow .field,
+.formrow select.field,
+.formrow textarea.field {
+  width: 100%;
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  /* Поле отличается от карточки оттенком, а не только контуром: полей
+     в форме под сотню, и белым по белому строка читалась как сплошной
+     лист. В фильтрах и в поиске поля остаются как были — там их
+     единицы, и они стоят не на карточке. */
+  background: var(--field);
+}
+/* в работе поле поднимается до цвета карточки — видно, где курсор */
+.formrow .field:focus { background: var(--surface); }
+.formrow.has-error .field { border-color: var(--fault); }
+.formrow .errors { color: var(--fault); font-size: 12px; margin-top: 5px; }
+.formrow label .req { color: var(--fault); margin-left: 3px; }
+/* Поле, которое заполняется системой: видно, что вводить туда нечего.
+   Оттенок глубже, чем у обычного поля: раньше запертое отличалось тем,
+   что фон был только у него, а теперь фон есть у обоих — и разницу
+   нужно держать заметной. */
+.field--locked {
+  background: var(--hover);
+  color: var(--muted);
+  cursor: default;
+}
+.field--locked:focus { box-shadow: none; border-color: var(--line); }
+/* браузер красит disabled по-своему и по-разному: задаём явно, чтобы
+   запертое поле выглядело одинаково и в списке, и в обычном вводе */
+.field--locked:disabled, select.field--locked:disabled {
+  background: var(--hover);
+  color: var(--muted);
+  opacity: 1;
+  -webkit-text-fill-color: var(--muted);
+}
+
+/* сводка ошибок над формой: сразу видно, что именно не заполнено */
+.alert {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--ring);
+  border-left: 3px solid var(--purple);
+  margin-bottom: var(--s-4);
+  font-size: 13px;
+}
+.alert--error { border-left-color: var(--fault); }
+.alert ul { margin: var(--s-2) 0 0; padding-left: 18px; }
+.alert li { margin-bottom: 2px; }
+.alert a { color: var(--fault); }
+.formrow .hint { color: var(--muted); font-size: 12px; margin-top: 5px; line-height: 1.35; }
+.formrow--wide { grid-column: 1 / -1; }
+
+/* Приписка под формой — там, где раньше стояла нижняя панель с кнопками:
+   кнопки уехали в шапку карточки, а пояснение осталось при форме. */
+.formnote {
+  margin: 0;
+  padding: 0 var(--s-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.formbar {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--s-4) var(--s-5);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  position: sticky;
+  bottom: 0;
+}
+
+/* поле выбора файла: кнопка и имена выбранного вместо системного поля,
+   которое браузер рисует по-своему. Разметку строит
+   components/static/components/file.js, само поле остаётся в форме */
+.filepick {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  padding: var(--s-2);
+  border: 1px dashed var(--line);
+  border-radius: var(--pill);
+  background: var(--field);
+  transition: border-color var(--fast), background var(--fast);
+}
+.formrow .filepick { width: 100%; }
+/* пока файл держат над полем — видно, что его тут ждут */
+.filepick.is-over { border-color: var(--purple); background: var(--purple-soft); }
+.filepick__btn { flex: none; }
+.filepick__icon { width: 15px; height: 15px; }
+.filepick__name {
+  min-width: 0;
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.filepick__name.is-empty { color: var(--muted); }
+/* поле остаётся в форме — оно и хранит файлы */
+.filepick__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Описание платы: текст и краткая характеристика рядом.
+
+   Двумя колонками, пока хватает ширины: характеристика — это перечень
+   коротких строк, и под текстом она занимала бы экран, а сбоку читается
+   заодно с описанием. На узком экране колонки схлопываются. */
+/* Три колонки: слева вид платы, в середине описание, справа
+   характеристика. Крайние — фиксированной ширины, середина забирает
+   остаток: описание читают строками, и его ширина должна зависеть от
+   экрана, а не от длины перечня справа. */
+.about {
+  display: grid;
+  /* Снимки — 400 px, как в карточке ревизии: плату узнают по виду, и
+     «узнаваемо» начинается примерно с этого размера. Число, а не доля
+     экрана: растягивать снимок вслед за широким монитором незачем,
+     деталей от этого не прибавится, а сжимать нельзя. */
+  grid-template-columns: 400px minmax(0, 1fr) minmax(220px, 300px);
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-5) var(--s-5);
+  align-items: start;
+}
+.about__name {
+  margin: 0 0 var(--s-3);
+  font-size: 16px;
+  font-weight: var(--weight-medium);
+  line-height: 1.3;
+}
+/* Ширина строки ограничена: описание читают глазами, а не сканируют, и
+   на широком мониторе строка в полтораста знаков теряется при переносе. */
+.about__text p {
+  max-width: 68ch;
+  margin: 0 0 var(--s-3);
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.about__text p:last-child { margin-bottom: 0; }
+
+.about__label {
+  margin-bottom: var(--s-3);
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* Характеристика стоит отдельным блоком со своим фоном: это справка, а не
+   продолжение описания, и взгляд не должен читать их подряд. */
+.about__specs {
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+
+/* Предпросмотр платы. Картинки идут над характеристикой, в той же колонке:
+   вид сверху и снизу — это тоже справка о плате, а не иллюстрация к
+   описанию. Ширину держит колонка, высоту — соотношение сторон. */
+.about__photos {
+  display: grid;
+  gap: var(--s-3);
+}
+
+/* ---- карточка ревизии: снимки слева, панели справа --------------------- */
+
+/* Ширина снимков фиксированная, а не доля экрана: плату узнают по виду, и
+   «узнаваемо» начинается примерно с 400 px. Растягивать их вслед за широким
+   монитором незачем — деталей от этого не прибавится, — а сжимать нельзя.
+
+   Справа от снимков стоит не одна панель, а обе: снимки задают высоту
+   страницы, и рядом с ними как раз помещаются карточка и список
+   документов. Колонкой во всю ширину страница выходила вдвое длиннее —
+   и пустее. */
+.revpage {
+  display: grid;
+  /* 460, а не 400: панели тянутся до общей высоты, и в колонке пошире
+     снимок вырастает вместе с ней, а не плавает в пустом месте */
+  grid-template-columns: minmax(0, 460px) minmax(0, 1fr);
+  gap: var(--s-4);
+  /* stretch, а не start: обе панели кончаются на одной линии. Раньше
+     снимки обрывались посреди карточки, и у страницы не было нижнего края —
+     глаз искал, где она заканчивается */
+  align-items: stretch;
+  margin-bottom: var(--s-4);
+}
+/* панель растягивается сеткой, а её содержимое — уже своими силами */
+.revpage > .panel { display: flex; flex-direction: column; min-width: 0; }
+
+/* Один под другим: у платы две стороны, и смотрят их по очереди, а не
+   сравнивают — рядом они были бы вдвое мельче без всякой пользы.
+
+   Высоту делят поровну и забирают весь остаток панели: обе стороны платы
+   равноправны, отдавать одной больше места не за что. */
+.revcard__photos {
+  flex: 1;
+  display: grid;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+  padding: var(--s-4) var(--s-4) var(--s-5);
+  min-height: 0;
+}
+
+/* Снимок занимает всю отведённую высоту, подпись остаётся внизу. */
+.revcard__photos .shot {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.revcard__photos .shot__link,
+.revcard__photos .shot__blank { flex: 1; min-height: 0; }
+.revcard__photos .shot__link { display: block; }
+.revcard__photos .shot img {
+  height: 100%;
+  /* contain, а не cover: обрезать плату нельзя — по краям у неё разъёмы
+     и крепёж, по которым её и узнают. Поэтому снимок растёт до упора по
+     меньшей стороне, а не заполняет место любой ценой */
+  object-fit: contain;
+}
+/* заглушке пропорции 2:1 здесь ни к чему — она растягивается наравне */
+.revcard__photos .shot__blank { aspect-ratio: auto; }
+
+
+/* Поля в два столбца.
+
+   Значения короткие — номер, имя, «ссылка», — а строка тянулась во всю
+   ширину панели: семнадцать полей занимали два экрана ради полутора
+   сантиметров текста в каждой строке.
+
+   Ровно два, а не auto-fit. С auto-fit на широком мониторе разворачивалось
+   пять колонок: подписи переносились на три строки, и глаз терял, где
+   кончается одна пара «подпись — значение» и начинается следующая.
+
+   Решает @container, а не @media: делить список надо по ширине самой
+   панели, а от ширины окна она отстоит на рельс, отступы и колонку снимков —
+   порог по окну пришлось бы подбирать наугад и пересчитывать после любой
+   правки раскладки. По умолчанию колонка одна: браузер без поддержки
+   контейнерных запросов покажет обычный список, а не кашу. */
+.revpage__main {
+  container-type: inline-size;
+  container-name: revmain;
+}
+
+dl.specs--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  /* последняя строка тоже с чертой — иначе одна из двух нижних ячеек
+     оказывалась бы без неё и низ списка выглядел рваным. Лишнюю черту
+     прячем за край: у .panel стоит overflow: hidden */
+  margin-bottom: -1px;
+}
+/* Тот же список, но плотнее по вертикали — для панелей, где делить на
+   столбцы нельзя из-за длинных значений. */
+dl.specs--tight > div {
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  padding: 9px var(--s-4);
+}
+
+dl.specs--split > div {
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: var(--s-3);
+  padding: 9px var(--s-4);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+/* 1100 px — столько нужно, чтобы после подписи в 240 px значению осталось
+   около 300: короткие значения карточки в такую ширину укладываются в одну
+   строку. Уже — и «Кросcплата (Backplane)» начинает переноситься, а
+   двухколоночный список из перенесённых строк читается хуже одноколоночного. */
+@container revmain (min-width: 1100px) {
+  dl.specs--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* черта между столбцами: без неё значение левой пары и подпись правой
+     стоят рядом и читаются как одна строка */
+  dl.specs--split > div:nth-child(even) {
+    border-left: 1px solid var(--line-soft);
+  }
+}
+.shot { margin: 0; }
+
+/* Место под снимок, когда снимка нет.
+
+   Пропадающий блок читается как «так и задумано», пустая рамка с подписью —
+   как «сюда ещё не положили». Здесь правдиво второе, и заодно карточки плат
+   не пляшут по высоте от того, у какой дошли руки до фотографии.
+
+   Пунктир, а не сплошная рамка: сплошная выглядит рамкой снимка, и глаз
+   секунду ищет в ней картинку. Пропорции 2:1 — примерно как у платы, чтобы
+   на месте заглушки потом встал снимок похожего размера и вёрстка не
+   прыгнула. */
+.shot__blank {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  aspect-ratio: 2 / 1;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+.shot__blank svg { width: 28px; height: 28px; opacity: 0.5; }
+.shot img {
+  display: block;
+  width: 100%;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  /* фон под прозрачным PNG: без него плата теряется на тёмной теме */
+  background: var(--surface-2);
+}
+.shot figcaption {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.speclist { margin: 0; padding: 0; list-style: none; }
+.speclist__item {
+  position: relative;
+  padding-left: 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.speclist__item::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.6;
+}
+/* Вложенные пункты — перечень внутри характеристики: разъёмы, светодиоды */
+.speclist__item--1 { padding-left: 28px; }
+.speclist__item--2 { padding-left: 42px; }
+.speclist__item--1::before { left: 16px; }
+.speclist__item--2::before { left: 30px; }
+/* Заголовок перечня маркера не получает: он не характеристика, а подпись
+   к следующим строкам */
+.speclist__item--group {
+  margin-top: var(--s-2);
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+.speclist__item--group::before { content: none; }
+
+/* На средних экранах в ряд остаются две колонки: описание важнее
+   характеристики, а фото уходит под них целиком — узкой полосой оно
+   перестаёт что-либо показывать.
+   Порог поднят с 1400 до 1500 px вместе с шириной снимка: 400 + описание
+   + характеристика в 1400 уже не укладываются, и описание сплющивалось. */
+@media (max-width: 1500px) {
+  .about { grid-template-columns: minmax(0, 1fr) minmax(220px, 300px); }
+  .about__photos {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    /* верхняя граница та же 400 px: снимок не должен растянуться на
+       половину экрана только потому, что он тут один */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 400px));
+  }
+}
+@media (max-width: 900px) {
+  .about { grid-template-columns: minmax(0, 1fr); }
+  .about__photos { grid-row: auto; }
+}
+
+/* Снимок в 400 px и панели рядом перестают помещаться раньше, чем кончается
+   экран: столбцы складываются, снимки уходят наверх. */
+@media (max-width: 1100px) {
+  .revpage { grid-template-columns: minmax(0, 1fr); }
+  /* столбцов больше нет — тянуть снимки вслед за карточкой не надо,
+     высоту задают они сами */
+  .revpage > .panel { display: block; }
+  .revcard__photos {
+    grid-template-rows: none;
+    max-width: 460px;
+  }
+  .revcard__photos .shot img { height: auto; }
+}
+
+/* ============ 10a. Выпадающий список ==================================== */
+/*
+   Родной <select> остаётся в форме и хранит значение — он же работает,
+   если скрипт не загрузился. Когда скрипт есть, рядом появляется кнопка и
+   меню: список вариантов браузер оформлять не даёт, а вариантов у фильтров
+   бывает под три сотни, и в системном списке их не найти.
+   Разметку строит components/static/components/select.js.
+*/
+
+.pick { position: relative; display: inline-flex; max-width: 100%; vertical-align: middle; }
+/* в форме поля тянутся на всю ширину колонки, в панели фильтров — по
+   содержимому, но не шире, чем позволяет .field--select */
+.formrow .pick, .formrow .pick__trigger { width: 100%; }
+
+/* родной список остаётся в DOM: значение и отправка формы — на нём */
+.pick__native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pick__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  text-align: left;
+  cursor: pointer;
+}
+.pick__trigger:hover:not([disabled]) { border-color: var(--purple-ring); }
+.pick__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* выбранный фильтр видно по цвету — как и у родного списка */
+.pick__trigger.is-set { border-color: var(--purple); color: var(--purple); }
+.pick__trigger[disabled] { cursor: default; }
+.pick__arrow {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  transition: transform var(--fast);
+}
+.pick.is-open .pick__arrow { transform: rotate(180deg); }
+.pick__trigger.is-set .pick__arrow { color: var(--purple); }
+
+.pick__menu {
+  position: fixed;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  max-width: min(380px, calc(100vw - 24px));
+  padding: var(--s-1);
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+  animation: pick-in var(--fast) both;
+}
+.pick__menu[hidden] { display: none; }
+@keyframes pick-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.pick__find {
+  width: 100%;
+  height: 32px;
+  margin-bottom: var(--s-1);
+  padding: 0 var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--pill);
+  background: var(--field);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--ink);
+}
+.pick__find:focus { border-color: var(--purple); outline: none; }
+
+.pick__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 264px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.pick__list:focus { outline: none; }
+
+.pick__option {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 7px var(--s-3);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--ink);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* подсветка идёт за клавишами и за мышью одновременно: наводя мышь,
+   пользователь ожидает, что Enter выберет именно эту строку */
+.pick__option.is-active { background: var(--surface-2); }
+.pick__option[aria-selected="true"] {
+  color: var(--purple);
+  font-weight: var(--weight-medium);
+}
+/* Фильтры с несколькими значениями: слева отметка, как у чекбокса.
+   Галочка справа для них не нужна — отметку видно и так. */
+.pick--multi .pick__option::before {
+  content: "";
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+}
+.pick--multi .pick__option[aria-selected="true"]::before {
+  border-color: var(--purple);
+  background: var(--purple) center / 11px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6'/%3E%3C/svg%3E");
+}
+.pick--multi .pick__option[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: var(--weight-body);
+}
+.pick--multi .pick__option[aria-selected="true"]::after { content: none; }
+
+.pick__option[aria-selected="true"]::after {
+  content: "";
+  flex: none;
+  margin-left: auto;
+  width: 6px;
+  height: 10px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(42deg) translateY(-1px);
+}
+.pick__option[hidden] { display: none; }
+.pick__empty { margin: 0; padding: 9px var(--s-3); color: var(--muted); font-size: 13px; }
+
+/* ============ 11. Главная =============================================== */
+
+.hero {
+  position: relative;
+  background: #272b32;
+  color: #fff;
+  border-radius: var(--r-lg);
+  padding: var(--s-6) var(--s-6) 0;
+  margin-bottom: var(--s-4);
+  overflow: hidden;
+}
+.hero h1 {
+  font-size: 32px;
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0 0 var(--s-3);
+  max-width: min(760px, 70vw);
+}
+.hero p { margin: 0; color: #a8b0b8; max-width: min(620px, 60vw); line-height: 1.35; }
+.hero__stats { display: flex; gap: var(--s-6); flex-wrap: wrap; margin-top: var(--s-5); }
+.hero__cables { height: 72px; margin: var(--s-5) calc(var(--s-6) * -1) 0; }
+
+.stat__value {
+  font-size: 30px;
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.stat__label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.hero .stat__label { color: #97a0a9; }
+
+/* фирменная графика (2.4): упорядоченные провода и бегущий сигнал.
+   Есть официальные 3D-рендеры — подставьте их в background-image. */
+.cables {
+  position: relative;
+  overflow: hidden;
+  background: repeating-linear-gradient(to bottom,
+    transparent 0 8px, rgba(255, 255, 255, 0.09) 8px 9px);
+}
+.cables::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent,
+    rgba(149, 42, 255, 0.65), rgba(149, 42, 255, 0.05), transparent);
+  animation: signal 9s linear infinite;
+}
+@keyframes signal {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(320%); }
+}
+
+/* плитки групп вместо таблицы: быстрее сканируются взглядом */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--s-3);
+  padding: var(--s-4);
+}
+.tile {
+  display: block;
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--ink);
+  transition: background var(--fast), transform var(--fast), box-shadow var(--fast);
+}
+.tile:hover {
+  text-decoration: none;
+  background: var(--surface);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.tile__name {
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  font-weight: var(--weight-medium);
+  font-size: 14px;
+}
+.tile__title { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.tile__count {
+  font-size: 26px;
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  margin-top: var(--s-3);
+  line-height: 1;
+}
+.tile__bar {
+  height: 4px;
+  border-radius: var(--pill);
+  background: var(--line);
+  margin-top: var(--s-2);
+  overflow: hidden;
+}
+.tile__bar span {
+  display: block;
+  height: 100%;
+  border-radius: var(--pill);
+  background: linear-gradient(90deg, var(--purple), var(--purple-2));
+}
+
+.hints { padding: 0 var(--s-5) var(--s-5); display: grid; gap: var(--s-2); color: var(--ink-2); }
+
+/* полнота связывания BOM: доля строк, опирающихся на библиотеку */
+.coverage__main {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: var(--s-4) var(--s-5);
+}
+
+.coverage__stat { flex: 0 0 auto; }
+.coverage__value {
+  font-size: 34px;
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.coverage__value span { font-size: 18px; color: var(--muted); margin-left: 2px; }
+.coverage__stat .stat__label { margin-top: 6px; }
+
+.coverage__body { flex: 1; min-width: 0; }
+.coverage__bar {
+  height: 10px;
+  border-radius: var(--pill);
+  background: var(--paper-2, var(--line));
+  overflow: hidden;
+}
+.coverage__bar span {
+  display: block;
+  height: 100%;
+  border-radius: var(--pill);
+  background: linear-gradient(90deg, var(--purple-2), var(--purple));
+}
+
+.coverage__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-4);
+  margin-top: var(--s-2);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+/* точка перед числом заменяет подпись: видно, что к чему относится */
+.coverage__key { display: inline-flex; align-items: center; gap: 6px; }
+.coverage__key::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.coverage__key--linked::before { background: var(--purple); }
+.coverage__key--plain::before { background: var(--line); }
+
+.coverage__worst {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-5);
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.coverage__worst .chip { color: var(--ink-2); }
+.coverage__worst .chip:hover { text-decoration: none; color: var(--purple); }
+.coverage__worst .chip b {
+  margin-left: 6px;
+  font-family: var(--font-data);
+  letter-spacing: var(--tracking-data);
+  color: var(--purple);
+}
+
+/* предположение в импорте ссылок: артикул, пояснение и кнопка в строку.
+   Имя не .hint — тот класс уже занят подсказками под полями форм */
+.suggest { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.suggest + .suggest { margin-top: var(--s-2); }
+.suggest__add { display: inline; margin: 0; }
+.btn--small { padding: 2px 8px; font-size: 12px; }
+
+/* список внешних ссылок в карточке компонента */
+.linklist { list-style: none; margin: 0; padding: var(--s-3); }
+.linklist li { padding: var(--s-2) 0; border-bottom: 1px solid var(--line-soft); }
+.linklist li:last-child { border-bottom: 0; }
+.linklist a { word-break: break-word; }
+
+@media (max-width: 720px) {
+  .coverage__main { flex-direction: column; align-items: flex-start; gap: var(--s-3); }
+  .coverage__body { width: 100%; }
+}
+
+/* ============ 11a. Страница входа ======================================= */
+
+/* Страница входа шапку интерфейса не разворачивает: навигация и общий
+   поиск вошедшему ещё не принадлежат. Остаётся фирменная пара — тёмный
+   блок с логотипом и проводами (2.1, 2.4) и сама форма. */
+
+.authpage {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  padding: var(--s-4);
+}
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  width: min(880px, 100%);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--ring), var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* тёмный фирменный фон — тот же, что у блока на главной */
+.auth__brand {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--s-3);
+  background: #272b32;
+  color: #fff;
+  padding: var(--s-6) var(--s-6) 0;
+}
+/* 148 px при минимально допустимых 130 по брендбуку (2.1) */
+.auth__logo { width: 148px; }
+.auth__section {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #97a0a9;
+}
+.auth__lead { margin: 0 0 var(--s-5); color: #a8b0b8; line-height: 1.35; }
+.auth__cables { height: 56px; margin: 0 calc(var(--s-6) * -1); }
+
+.auth__form { padding: var(--s-6); }
+.auth__title {
+  font-size: 24px;
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s-5);
+}
+.auth__row { display: grid; gap: 6px; margin-bottom: var(--s-4); }
+.auth__row label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* поля здесь во всю ширину карточки: в форме их два, тесниться незачем */
+.auth__row .field { width: 100%; }
+.auth__submit { width: 100%; justify-content: center; margin-top: var(--s-2); }
+.auth__note { font-size: 12px; line-height: 1.4; margin: var(--s-5) 0 0; }
+
+/* ============ 11b. Просмотр снимка ====================================== */
+
+/* Слой поверх страницы: посмотреть плату крупно и вернуться туда же, не
+   уходя с карточки и не теряя прокрутку.
+
+   z-index 80 — выше всего остального: меню выпадающего списка стоит на 70,
+   тосты на 60. Слой перекрывает и их: пока смотрят снимок, ничего другого
+   на экране быть не должно. */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5);
+  /* затемнение, а не сплошной цвет: видно, что страница на месте и никуда
+     не ушла — возвращаться не страшно */
+  background: rgba(39, 43, 50, 0.82);
+}
+.lightbox[hidden] { display: none; }
+
+/* Страница под слоем не прокручивается: колесо мыши иначе уводит карточку,
+   а видно всё равно только снимок. */
+body.lightbox-open { overflow: hidden; }
+
+.lightbox__frame {
+  margin: 0;
+  display: grid;
+  gap: var(--s-3);
+  justify-items: center;
+  max-width: 100%;
+  max-height: 100%;
+}
+/* Снимок вписывается в окно целиком: и вытянутый бэкплейн, и почти
+   квадратная материнская плата. Апскейла нет — растянутый до экрана
+   снимок в 1600 px по длинной стороне выглядит мылом. */
+.lightbox__image {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100dvh - var(--s-5) * 2 - 40px);
+  width: auto;
+  height: auto;
+  border-radius: var(--r-md);
+  /* фон под прозрачным PNG — тот же приём, что у .shot */
+  background: var(--surface-2);
+  box-shadow: var(--shadow-lg);
+}
+.lightbox__caption {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  text-align: center;
+}
+.lightbox__caption[hidden] { display: none; }
+
+.lightbox__close {
+  position: absolute;
+  top: var(--s-4);
+  right: var(--s-4);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.lightbox__close:hover { background: rgba(255, 255, 255, 0.22); }
+.lightbox__close svg { width: 20px; height: 20px; }
+
+/* Ссылка вокруг снимка в карточке: курсор должен обещать увеличение, а не
+   переход — щелчок остаётся на той же странице. */
+.shot__link { display: block; cursor: zoom-in; }
+
+/* ============ 11c. Вкладки ============================================== */
+
+/* Полоска вкладок над панелями. Собирается скриптом из заголовков самих
+   панелей, поэтому в разметке её нет — и без скрипта её нет тоже, панели
+   просто идут одна за другой (tabs.js).
+
+   Оформлена как заголовок панели, а не как кнопки: те же 10 px в верхнем
+   регистре с разрядкой, что у section__head, тот же приглушённый цвет. По
+   сути это и есть заголовки панелей, просто выложенные в ряд, — и выглядеть
+   они должны так же, иначе на странице появляется второй язык подписей.
+
+   Просвет между панелями всё равно задан: он работает в том случае, когда
+   скрипт не отработал и панели остались колонкой. */
+.tabs { display: grid; gap: var(--s-4); }
+
+.tabs__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: var(--s-1);
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--ring);
+}
+
+.tabs__btn {
+  /* appearance: браузерные кнопки приносят свою рамку, фон и шрифт —
+     без сброса вкладки выглядят как кнопки формы, а не как подписи */
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 9px var(--s-4);
+  margin: 0;
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color .12s, background .12s;
+}
+.tabs__btn:hover { color: var(--ink); background: var(--surface-2); }
+.tabs__btn:focus-visible { outline: 2px solid var(--purple); outline-offset: -2px; }
+
+/* Выбранная: фирменный лиловый и подчёркивание — тот же приём, что у
+   активного пункта в боковой навигации. */
+.tabs__btn.is-active {
+  color: var(--ink);
+  background: var(--surface-2);
+  box-shadow: inset 0 -2px 0 var(--purple);
+}
+
+/* Счётчик готовности прямо на вкладке: сколько строк чек-листа заполнено.
+   Иначе, чтобы это узнать, надо открыть каждую — а открывают ради одной.
+
+   Отбит чертой и своим начертанием: без этого «Исходные файлы» и «18/18»
+   слипались в одно слово. Цифры моноширинные, чтобы вкладки не дёргались
+   по ширине, когда счётчик меняется. */
+.tabs__note {
+  padding-left: var(--s-2);
+  border-left: 1px solid var(--line);
+  font-family: var(--font-data);
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tabs__btn.is-active .tabs__note { color: var(--purple); }
+
+/* Узкий экран: полоска прокручивается вбок, а не переносится на три
+   строки — вкладок бывает пять, и перенос съедает пол-экрана. */
+@media (max-width: 720px) {
+  .tabs__bar { flex-wrap: nowrap; overflow-x: auto; }
+}
+
+/* ============ 12. Сообщения ============================================= */
+
+.notes {
+  position: fixed;
+  right: var(--s-4);
+  bottom: var(--s-4);
+  z-index: 60;
+  display: grid;
+  gap: var(--s-2);
+  max-width: min(420px, calc(100vw - 32px));
+}
+.note {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border-left: 3px solid var(--purple);
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  animation: toast-in var(--slow) both;
+}
+.note--error { border-left-color: var(--fault); }
+.note--warning { border-left-color: var(--purple-2); }
+.note.is-leaving { animation: toast-out var(--slow) both; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes toast-out {
+  to { opacity: 0; transform: translateY(8px); }
+}
+
+.searchgroup { margin-bottom: var(--s-4); }
+
+/* ============ 13. Адаптив =============================================== */
+
+@media (max-width: 1180px) {
+  .formgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1080px) {
+  .cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 860px) {
+  .shell { flex-direction: column; padding: var(--s-3); gap: var(--s-3); }
+  .rail { width: 100%; flex: none; position: static; max-height: none; }
+  .main { width: 100%; }
+  /* на узком экране прокрутка внутри окошка мешает вдвойне */
+  .table-wrap { max-height: none; min-height: 0; }
+  .topbar { flex-wrap: wrap; padding: var(--s-2) var(--s-3); gap: var(--s-3); }
+  .topbar__side { flex: 1 1 auto; }
+  .topbar__section { display: none; }
+  .topbar__search { flex: 1 1 100%; order: 3; }
+  .topbar__logo img { width: 130px; }
+  .hero { padding: var(--s-5) var(--s-4) 0; }
+  .hero h1 { font-size: 24px; max-width: none; }
+  .hero__cables { margin: var(--s-4) calc(var(--s-4) * -1) 0; }
+  /* вход: тёмный блок уезжает наверх, форма под ним */
+  .auth { grid-template-columns: 1fr; }
+  .auth__brand { padding: var(--s-5) var(--s-4) 0; }
+  .auth__cables { margin: 0 calc(var(--s-4) * -1); height: 40px; }
+  .auth__form { padding: var(--s-5) var(--s-4); }
+  .legend h1 { font-size: 21px; }
+  .notes { left: var(--s-3); right: var(--s-3); max-width: none; }
+}
+
+@media (max-width: 720px) {
+  .formgrid { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .cables::after { opacity: 0.5; }
+}

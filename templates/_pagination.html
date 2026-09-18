@@ -1,0 +1,52 @@
+{% comment %}
+Постраничная навигация, общая для всех списков: компоненты, платы, изделия,
+составы, журнал, дубли. Лежит в корневом templates/, а не в components/,
+потому что пользуются ею три приложения.
+
+Ждёт в контексте только `page` — объект Page. Paginator берётся у него
+самого (`page.paginator`), поэтому представлению не нужно класть его в
+контекст отдельно.
+
+Ссылки строит тег `page_url`: он сохраняет фильтры и сортировку из текущей
+строки запроса. Собирать их в шаблоне руками нельзя — каждый новый фильтр
+пришлось бы дописывать в каждую ссылку, и один из них молча отвалится.
+
+Параметры:
+  only_pages — не показывать «всего N» и выбор числа строк. Нужен там, где
+               размер страницы не настраивается или счётчик уже выведен в
+               шапке страницы.
+  note       — короткая приписка справа от навигации.
+
+Выбор числа строк (`_page_size.html`) отправляет форму с id="list-filters",
+поэтому без only_pages фрагмент годится только тем страницам, где такая
+форма есть; плюс в контексте нужны `page_sizes` и `per_page`.
+{% endcomment %}
+{% load components_extras %}
+<div class="pager">
+  {% if page.has_previous %}
+    <a class="btn" href="{% page_url 1 %}">« первая</a>
+    <a class="btn" href="{% page_url page.previous_page_number %}">назад</a>
+  {% else %}
+    <span class="btn" aria-disabled="true" style="opacity:.4">« первая</span>
+  {% endif %}
+
+  <span class="pager__pos">стр. {{ page.number }} из {{ page.paginator.num_pages }}</span>
+
+  {% if page.has_next %}
+    <a class="btn" href="{% page_url page.next_page_number %}">вперёд</a>
+    <a class="btn" href="{% page_url page.paginator.num_pages %}">последняя »</a>
+  {% else %}
+    <span class="btn" aria-disabled="true" style="opacity:.4">последняя »</span>
+  {% endif %}
+
+  {% if not only_pages %}
+    <span class="pager__spacer"></span>
+    <span class="muted">всего {{ page.paginator.count }}</span>
+    {% include "_page_size.html" %}
+  {% endif %}
+
+  {% if note %}
+    <span class="pager__spacer"></span>
+    <span class="muted">{{ note }}</span>
+  {% endif %}
+</div>

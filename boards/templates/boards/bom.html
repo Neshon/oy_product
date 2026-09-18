@@ -1,0 +1,179 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}Состав {{ revision.oy_pn|default:board.base_pn }} · Платы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> ·
+    <a href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a> ·
+    <a href="{{ revision.get_absolute_url }}">{{ revision.oy_pn|default:revision.label }}</a> ·
+    состав BOM
+  </div>
+  <div class="legend__row">
+    <h1 class="mono">{{ revision.oy_pn|default:revision.label }}</h1>
+    <span class="chip chip--table">Rev {{ revision.board_rev|default:"—" }}</span>
+    <span class="chip chip--table">BOM {{ revision.bom_rev|default:"—" }}</span>
+    {% if revision.variant %}<span class="chip chip--dup">исполнение {{ revision.variant }}</span>{% endif %}
+    <span class="legend__count">{{ position_count }} позиций · {{ item_count }} строк</span>
+    <span class="legend__actions">
+      <a class="btn" href="?export=xlsx"
+         title="BOM в том же виде, в каком он приходит: файл читается обратно импортом">Выгрузить Excel</a>
+      <a class="btn" href="?export=csv">Выгрузить CSV</a>
+      <a class="btn btn--ghost" href="{{ revision.get_absolute_url }}">К карточке ревизии</a>
+    </span>
+  </div>
+</div>
+
+{% comment %}
+  Панели «шапка BOM» здесь больше нет: половина её строк повторяла карточку
+  ревизии, а остальное описывало присланный файл, а не плату. Всё, что имело
+  смысл, переехало в саму карточку — там оно рядом с остальными номерами.
+{% endcomment %}
+
+<div class="stack">
+
+{% if previous %}
+  <div class="panel">
+    <div class="section__head">отличия от {{ previous.label }}</div>
+    {% if diff %}
+      <div class="tagcloud" style="flex-direction:column;align-items:stretch;gap:10px">
+        {% if diff.added %}
+          <div><b>Добавлено: {{ diff.added|length }}</b>
+            <div class="muted mono" style="margin-top:4px">
+              {% for item in diff.added %}{{ item.gbt_pn|default:item.vendor_pn }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+          </div>
+        {% endif %}
+        {% if diff.removed %}
+          <div><b>Убрано: {{ diff.removed|length }}</b>
+            <div class="muted mono" style="margin-top:4px">
+              {% for item in diff.removed %}{{ item.gbt_pn|default:item.vendor_pn }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+          </div>
+        {% endif %}
+        {% if diff.changed %}
+          <div><b>Изменилось количество: {{ diff.changed|length }}</b>
+            <div class="muted mono" style="margin-top:4px">
+              {% for was, now in diff.changed %}{{ now.gbt_pn|default:now.vendor_pn }} {{ was.qty|default:"—" }}→{{ now.qty|default:"—" }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="tagcloud"><span class="muted">Состав не изменился.</span></div>
+    {% endif %}
+  </div>
+{% endif %}
+
+<div class="panel">
+  <div class="section__head">
+    состав · связано с библиотекой {{ linked_count }} из {{ item_count }}
+    {% if can_edit_boards %}
+      <span class="toolbar__spacer"></span>
+      <a class="btn" href="{% url 'boards:item-pick' board.pk revision.number %}">Добавить компонент</a>
+    {% endif %}
+  </div>
+  <div class="filterbar">
+    <span class="filterbar__label">данные</span>
+    <span class="muted">Все значения — из BOM, как их выпустили: правки в
+      карточке компонента состав не меняют. Артикул связанной строки ведёт
+      на карточку — там видно, что в библиотеке сейчас. Строки, помеченные
+      <span class="chip">?</span>, в библиотеке не найдены.</span>
+  </div>
+  <div class="table-wrap">
+    <table class="grid grid--bom">
+      <thead>
+        <tr>
+          <th style="width:56px">I/N</th>
+          <th style="width:52px">M/S</th>
+          <th>Vendor P/N</th>
+          <th>Vendor</th>
+          <th>OY ID</th>
+          <th>OY P/N</th>
+          <th>GBT P/N</th>
+          <th>Description</th>
+          <th>Description GBT</th>
+          <th>SMT/THT</th>
+          <th>Part References</th>
+          <th style="width:60px">QTY</th>
+          <th>Comment</th>
+          {% if can_edit_boards %}<th style="width:80px"></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for group in groups %}
+          {% if group.main %}
+            <tr>
+              <td class="num">{{ group.main.position }}</td>
+              <td class="pn">M</td>
+              <td class="pn">
+                {% if group.main.is_linked %}
+                  <a class="rowlink" href="{{ group.main.library_url }}">{{ group.main.vendor_pn|default:"—" }}</a>
+                {% else %}
+                  {{ group.main.vendor_pn|default:"—" }}
+                  <span class="chip" title="Компонент не найден в библиотеке — открыть карточку не по чему">?</span>
+                {% endif %}
+              </td>
+              <td class="pn">{{ group.main.vendor|default:"—" }}</td>
+              <td class="pn">{{ group.main.oy_id|default:"—" }}</td>
+              <td class="pn">{{ group.main.oy_pn|default:"—" }}</td>
+              <td class="pn">{{ group.main.gbt_pn|default:"—" }}</td>
+              <td class="desc">{{ group.main.description|default:"—" }}</td>
+              <td class="desc">{{ group.main.description_gbt|default:"—" }}</td>
+              <td class="pn">{{ group.main.smt_tht|default:"—" }}</td>
+              <td class="desc">{{ group.main.references|wrap_refs }}</td>
+              <td class="num">{{ group.main.qty|default:"—" }}</td>
+              <td class="desc">{{ group.main.comment|default:"—" }}</td>
+              {% if can_edit_boards %}
+                <td class="pn"><a href="{% url 'boards:item-edit' board.pk revision.number group.main.pk %}">править</a></td>
+              {% endif %}
+            </tr>
+          {% endif %}
+          {% for item in group.substitutes %}
+            <tr class="row--sub">
+              <td class="num"></td>
+              <td class="pn"><span class="chip chip--replacement">S</span></td>
+              <td class="pn">
+                {% if item.is_linked %}
+                  <a class="rowlink" href="{{ item.library_url }}">{{ item.vendor_pn|default:"—" }}</a>
+                {% else %}
+                  {{ item.vendor_pn|default:"—" }}
+                  <span class="chip" title="Компонент не найден в библиотеке — открыть карточку не по чему">?</span>
+                {% endif %}
+              </td>
+              <td class="pn">{{ item.vendor|default:"—" }}</td>
+              <td class="pn">{{ item.oy_id|default:"—" }}</td>
+              <td class="pn">{{ item.oy_pn|default:"—" }}</td>
+              <td class="pn">{{ item.gbt_pn|default:"—" }}</td>
+              <td class="desc">{{ item.description|default:"—" }}</td>
+              <td class="desc">{{ item.description_gbt|default:"—" }}</td>
+              <td class="pn">{{ item.smt_tht|default:"—" }}</td>
+              <td class="desc">{{ item.references|wrap_refs }}</td>
+              <td class="num">{{ item.qty|default:"—" }}</td>
+              <td class="desc">{{ item.comment|default:"—" }}</td>
+              {% if can_edit_boards %}
+                <td class="pn"><a href="{% url 'boards:item-edit' board.pk revision.number item.pk %}">править</a></td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if not groups %}
+    <div class="empty">
+      <h2>Состав пуст</h2>
+      <p class="muted">Плата заведена, но позиции ещё не добавлены.</p>
+      {% if can_edit_boards %}
+        <a class="btn btn--primary" href="{% url 'boards:item-pick' board.pk revision.number %}">Добавить компонент</a>
+        <a class="btn" href="{% url 'boards:import' %}">Загрузить BOM</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+</div>
+{% endblock %}

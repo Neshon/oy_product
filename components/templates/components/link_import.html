@@ -1,0 +1,226 @@
+{% extends "components/base.html" %}
+
+{% block title %}Импорт ссылок на компоненты{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">библиотека</div>
+  <div class="legend__row">
+    <h1>Импорт ссылок</h1>
+  </div>
+</div>
+
+{# отчёт — это несколько блоков подряд, между ними нужен просвет #}
+<div class="stack">
+<div class="panel">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="alert alert--error" role="alert">
+        <b>Файл не принят.</b>
+        {% for field in form %}
+          {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="toolbar">
+      {{ form.file }}
+      <label class="muted">
+        {{ form.dry_run }} {{ form.dry_run.label }}
+      </label>
+      <button class="btn btn--primary" type="submit">Загрузить</button>
+    </div>
+    <p class="muted" style="padding: 0 var(--s-3) var(--s-3)">
+      {{ form.file.help_text }}. Компонент ищется по артикулу в самой
+      библиотеке, поэтому формат названия значения не имеет.
+    </p>
+  </form>
+</div>
+
+{% if result %}
+  <div class="panel">
+    <div class="section__head">
+      результат ·
+      осталось {{ result.matched|length }} из {{ result.total }}
+      {% if result.written %} · записано{% else %} · пробный проход{% endif %}
+    </div>
+    <dl class="specs">
+      <div><dt>Строк в файле</dt><dd>{{ result.total }}</dd></div>
+      {% if result.already %}
+        <div>
+          <dt>Уже заведено раньше</dt>
+          <dd>{{ result.already|length }} — в списках ниже не показаны</dd>
+        </div>
+      {% endif %}
+      <div><dt>Компонент найден</dt><dd>{{ result.matched|length }}</dd></div>
+      <div><dt>Не найден</dt><dd>{{ result.unmatched|length }}</dd></div>
+      <div><dt>Ссылок к записи</dt><dd>{{ result.links }}</dd></div>
+      {% if result.written %}
+        <div><dt>Проставлено</dt><dd>{{ result.filled }}</dd></div>
+        <div><dt>Заменено</dt><dd>{{ result.replaced }}</dd></div>
+      {% endif %}
+    </dl>
+    {% if not result.matched and not result.unmatched %}
+      <div class="pager">
+        <span class="muted">Всё из этого файла уже заведено — делать нечего.</span>
+      </div>
+    {% endif %}
+    {% if not result.written and result.matched %}
+      <div class="pager">
+        <span class="muted">Чтобы записать, снимите галочку «Только
+          проверить» и выберите файл ещё раз.</span>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if result.unmatched %}
+    <div class="panel">
+      <div class="section__head">
+        компонент не найден · {{ result.unmatched|length }}
+      </div>
+      <p class="muted" style="padding: 0 var(--s-3)">
+        Такого артикула в библиотеке нет, либо он записан иначе. Ссылки по
+        этим строкам не создаются. В колонке «Возможно, это» — похожие
+        артикулы: проверьте и, если совпадает, поправьте запись в трекере
+        или в библиотеке.
+      </p>
+      <div class="table-wrap table-wrap--flow">
+        <table class="grid grid--compact">
+          <thead>
+            <tr>
+              <th>Задача</th>
+              <th>Возможно, это</th>
+              <th style="width:220px">Ссылка</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in result.unmatched %}
+              <tr>
+                <td class="desc">{{ row.title }}</td>
+                <td class="desc">
+                  {% for hint in row.hints %}
+                    <div class="suggest">
+                      {% if hint.url %}
+                        <a class="mono" href="{{ hint.url }}" target="_blank" rel="noopener">{{ hint.pn }}</a>
+                      {% else %}
+                        <span class="mono">{{ hint.pn }}</span>
+                      {% endif %}
+                      <span class="muted"> · {{ hint.reason }}</span>
+                      {% if can_edit_components %}
+                        <form class="suggest__add" method="post"
+                              action="{% url 'components:link-add' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="component_table" value="{{ hint.table }}">
+                          <input type="hidden" name="component_id" value="{{ hint.pk }}">
+                          <input type="hidden" name="url" value="{{ row.url }}">
+                          <button class="btn btn--small" type="submit">Добавить</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  {% empty %}
+                    <span class="muted">—</span>
+                  {% endfor %}
+                </td>
+                <td class="pn">
+                  <a href="{{ row.url }}" target="_blank" rel="noopener">{{ row.url }}</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if result.many %}
+    <div class="panel">
+      <div class="section__head">
+        попало в несколько записей · {{ result.many|length }}
+      </div>
+      <p class="muted" style="padding: 0 var(--s-3)">
+        Один артикул нашёлся сразу в нескольких таблицах — обычно это
+        компонент и его аналог. Ссылка проставляется каждой записи.
+      </p>
+      <div class="table-wrap table-wrap--flow">
+        <table class="grid grid--compact">
+          <thead>
+            <tr><th>Артикул</th><th>Задача</th><th>Таблицы</th></tr>
+          </thead>
+          <tbody>
+            {% for item in result.many %}
+              <tr>
+                <td class="pn">{{ item.pn }}</td>
+                <td class="desc">{{ item.title }}</td>
+                <td class="pn">
+                  {% for table, pk in item.targets %}{{ table }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if result.matched %}
+    <div class="panel">
+      <div class="section__head">
+        сопоставлено · {{ result.matched|length }}
+      </div>
+      <div class="table-wrap table-wrap--flow">
+        <table class="grid grid--compact">
+          <thead>
+            <tr><th>Артикул</th><th>Задача</th><th style="width:110px">Правило</th></tr>
+          </thead>
+          <tbody>
+            {% for item in result.matched %}
+              <tr>
+                <td class="pn">{{ item.pn }}</td>
+                <td class="desc">{{ item.title }}</td>
+                <td class="pn">{{ item.rule }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Кнопка «Добавить» рядом с предположением: заводим одну подтверждённую
+  // ссылку, не уходя со страницы — иначе результаты импорта пропадут, и
+  // подтвердить второе предположение будет уже не по чему.
+  document.addEventListener('submit', function (event) {
+    const form = event.target.closest('.suggest__add');
+    if (!form) { return; }
+    event.preventDefault();
+
+    const button = form.querySelector('button');
+    button.disabled = true;
+    button.textContent = 'добавляю…';
+
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        const note = document.createElement('span');
+        note.className = data.ok ? 'muted' : 'chip';
+        note.textContent = data.ok ? ' · добавлено' : ' · ' + data.message;
+        form.replaceWith(note);
+      })
+      .catch(function () {
+        // сеть отвалилась — возвращаем кнопку, чтобы можно было повторить
+        button.disabled = false;
+        button.textContent = 'Добавить';
+      });
+  });
+</script>
+{% endblock %}

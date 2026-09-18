@@ -1,0 +1,129 @@
+{% extends "components/base.html" %}
+
+{% block title %}{{ board.base_pn }} · Платы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> · карточка платы
+  </div>
+  <div class="legend__row">
+    <h1 class="mono">{{ board.base_pn }}</h1>
+    {% if board.board_type %}<span class="chip">{{ board.get_board_type_display }}</span>{% endif %}
+    {% if current %}
+      <a class="chip chip--table" href="{{ current.get_absolute_url }}"
+         title="текущая ревизия">{{ current.oy_pn|default:current.label }}</a>
+    {% endif %}
+    <span class="legend__count">{{ revisions|length }} ревизий</span>
+    <span class="legend__actions">
+      {% if can_edit_boards %}
+        <a class="btn" href="{% url 'boards:edit' board.pk %}">Править карточку</a>
+        <a class="btn" href="{% url 'boards:revision-create' board.pk %}">Добавить ревизию</a>
+        <a class="btn btn--primary" href="{% url 'boards:import' %}">Загрузить BOM</a>
+        <a class="btn btn--danger" href="{% url 'boards:delete' board.pk %}">Удалить плату</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="stack">
+
+<div class="panel">
+  <div class="section__head">описание</div>
+  {% comment %}
+    Блок разворачивается всегда, даже если платой ещё не занимались: место
+    под снимки должно быть видно, а не исчезать. Текстовая часть при этом
+    может оказаться пустой — там своя подсказка, откуда берётся описание.
+  {% endcomment %}
+  <div class="about">
+    <div class="about__photos">
+      {% include "_shot.html" with photo=board.photo_top caption="Top side" subject=board.base_pn side="сверху" %}
+      {% include "_shot.html" with photo=board.photo_bottom caption="Bottom side" subject=board.base_pn side="снизу" %}
+    </div>
+
+    <div class="about__text">
+      {% if board.name %}<h2 class="about__name">{{ board.name }}</h2>{% endif %}
+      {% if board.purpose %}<p>{{ board.purpose|linebreaksbr }}</p>{% endif %}
+      {% if board.applicability %}<p>{{ board.applicability|linebreaksbr }}</p>{% endif %}
+      {% if not board.name and not board.purpose and not board.applicability %}
+        <p class="muted">Описания пока нет. Оно приходит со страницы платы
+           в Confluence — <code>import_cards</code>, — или заполняется в
+           карточке.</p>
+      {% endif %}
+    </div>
+
+    {% if board.spec_lines %}
+      <div class="about__specs">
+        <div class="about__label">краткая характеристика</div>
+        <ul class="speclist">
+          {% for line in board.spec_lines %}
+            <li class="speclist__item speclist__item--{{ line.depth }}{% if line.is_group %} speclist__item--group{% endif %}">{{ line.text }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="section__head">список версий печатных плат · {{ revisions|length }}</div>
+  {% if revisions %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Наименование печатной платы</th>
+            <th>Наименование BOM</th>
+            <th style="width:100px">Rev PCB</th>
+            <th style="width:100px">Rev BOM</th>
+            <th style="width:110px">BOM загружен</th>
+            <th>Дополнительные сведения</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in revisions %}
+            <tr data-href="{{ item.get_absolute_url }}">
+              <td class="pn">
+                <a class="rowlink" href="{{ item.get_absolute_url }}">{{ item.pcb_name|default:item.oy_pn|default:item.number }}</a>
+                {% if item.is_current %}<span class="chip chip--table">текущая</span>{% endif %}
+                {% if item.approved %}<span class="chip chip--added" title="карточка утверждена">✓</span>{% endif %}
+              </td>
+              <td class="pn">{{ item.bom_name|default:"—" }}</td>
+              <td class="num">{{ item.board_rev|default:"—" }}</td>
+              <td class="pn">{{ item.bom_rev|default:"—" }}</td>
+              <td class="pn">{{ item.imported_at|date:"d.m.Y"|default:"—" }}</td>
+              <td class="desc">
+                {% comment %}
+                  Ход работ и соответствия номеров: на карточке ревизии они
+                  стоят отдельными строками, здесь собраны в одну ячейку —
+                  десять колонок ради полей, которые чаще пусты, растянули бы
+                  таблицу на два экрана. Пустые пропускаются, подписи берутся
+                  из самих полей (BoardRevision.extra_facts).
+                {% endcomment %}
+                {% if item.extra_facts %}
+                  <dl class="rowfacts">
+                    {% for label, value in item.extra_facts %}
+                      <div><dt>{{ label }}</dt><dd>{{ value }}</dd></div>
+                    {% endfor %}
+                  </dl>
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <h2>Ревизий ещё нет</h2>
+      <p class="muted">Плата заведена, но ни один BOM не загружен.</p>
+      {% if can_edit_boards %}
+        <a class="btn" href="{% url 'boards:revision-create' board.pk %}">Добавить ревизию</a>
+        <a class="btn btn--primary" href="{% url 'boards:import' %}">Загрузить BOM</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+</div>
+{% endblock %}

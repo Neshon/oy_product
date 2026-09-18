@@ -1,0 +1,49 @@
+{% extends "components/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if revision %}Карточка ревизии {{ revision.oy_pn }}{% else %}Новая ревизия {{ board.base_pn }}{% endif %} · Платы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> ·
+    <a href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a> ·
+    {% if revision %}карточка ревизии{% else %}новая ревизия{% endif %}
+  </div>
+  <div class="legend__row">
+    {% if revision %}
+      <h1 class="mono">{{ revision.oy_pn|default:revision.label }}</h1>
+      <span class="chip chip--table">Rev {{ revision.board_rev|default:"—" }}</span>
+      <span class="chip chip--table">BOM {{ revision.bom_rev|default:"—" }}</span>
+      {% if revision.variant %}<span class="chip chip--dup">исполнение {{ revision.variant }}</span>{% endif %}
+    {% else %}
+      <h1>Новая ревизия</h1>
+    {% endif %}
+    <span class="legend__actions">
+      <a class="btn btn--ghost"
+         href="{% if revision %}{{ revision.get_absolute_url }}{% else %}{{ board.get_absolute_url }}{% endif %}">Отменить</a>
+      <button class="btn btn--primary" type="submit" form="revision-form">Сохранить</button>
+    </span>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate id="revision-form">
+  {% csrf_token %}
+  <div class="panel">
+    <div class="formgrid">
+      {% for field in form %}
+        {{ field|as_crispy_field }}
+      {% endfor %}
+    </div>
+  </div>
+  <p class="formnote">
+    {% if revision %}
+      Номер, ревизии платы и BOM и локализация здесь не правятся: они
+      приходят из BOM-файла и разбираются из номера.
+    {% else %}
+      Состав у новой ревизии пустой — он появится с импортом BOM. Ревизии
+      платы и BOM и локализация разберутся из номера.
+    {% endif %}
+  </p>
+</form>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}Дубли · Библиотека компонентов{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">ревизия данных</div>
+  <div class="legend__row">
+    <h1>Дубли</h1>
+    {% if total %}
+      <span class="legend__count">{{ total }} групп · {{ records }} записей</span>
+    {% endif %}
+  </div>
+</div>
+
+{% if failed %}
+  <div class="alert alert--error">Не читаются таблицы: {{ failed|join:", " }}.</div>
+{% endif %}
+
+<div class="panel">
+  <form class="toolbar" method="get">
+    {% for name, meta in checks.items %}
+      <a class="btn {% if check == name %}btn--primary{% endif %}"
+         href="{% param_url check=name %}">{{ meta.title }}</a>
+    {% endfor %}
+    <span class="toolbar__spacer"></span>
+    <input type="hidden" name="check" value="{{ check }}">
+    <input class="field field--search" type="search" name="q" value="{{ term }}"
+           placeholder="фильтр по значению" autocomplete="off">
+    <button class="btn" type="submit">Найти</button>
+    {% if term %}<a class="btn btn--ghost" href="{% param_url q='' %}">Сбросить</a>{% endif %}
+  </form>
+
+  <div class="filterbar">
+    <span class="filterbar__label">проверка</span>
+    <span class="muted">{{ hint }}</span>
+  </div>
+
+  {% if page.object_list %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th style="width:24%">Совпадающее значение</th>
+            <th style="width:70px">Записей</th>
+            <th>Где заведено</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for group in page.object_list %}
+            <tr>
+              <td class="pn">{{ group.key }}</td>
+              <td class="num">{{ group.count }}</td>
+              <td class="desc">
+                {% for record in group.records %}
+                  <div style="margin-bottom:4px">
+                    <span class="chip chip--table">{{ record.category.table }}</span>
+                    <a class="mono" href="{% url 'components:detail' record.category.slug record.id %}">
+                      {{ record.vendor_pn|default:record.oy_pn|default:record.id }}</a>
+                    <span class="muted">{{ record.description|default:""|truncatechars:70 }}</span>
+                  </div>
+                {% endfor %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "_pagination.html" with only_pages=1 note="Отчёт читает таблицы целиком — открывайте по необходимости" %}
+  {% else %}
+    <div class="empty">
+      <h2>Дублей не нашлось</h2>
+      <p class="muted">
+        {% if term %}По этому фильтру совпадений нет.
+        {% else %}По выбранной проверке записи не повторяются.{% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

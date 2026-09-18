@@ -1,0 +1,106 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}Выбор компонента · {{ revision.oy_pn|default:board.base_pn }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'boards:list' %}">Платы</a> ·
+    <a href="{{ board.get_absolute_url }}">{{ board.base_pn }}</a> ·
+    <a href="{{ revision.get_absolute_url }}">{{ revision.oy_pn|default:revision.label }}</a> ·
+    <a href="{% url 'boards:bom' board.pk revision.number %}">состав</a>
+  </div>
+  <div class="legend__row">
+    <h1>Компонент из библиотеки</h1>
+    {% if term %}<span class="legend__count">{{ rows|length }} совпадений</span>{% endif %}
+    <span class="legend__actions">
+      <a class="btn btn--ghost" href="{% url 'boards:bom' board.pk revision.number %}">К составу</a>
+    </span>
+  </div>
+</div>
+
+<div class="panel">
+  <form class="toolbar" method="get">
+    <input class="field field--search" type="search" name="q" value="{{ term }}"
+           placeholder="Vendor P/N, GBT P/N, OY ID, OY P/N, описание, производитель"
+           autocomplete="off" autofocus>
+    <select class="field field--select" name="group">
+      <option value="">все группы</option>
+      {% for item in categories %}
+        <option value="{{ item.slug }}"
+                {% if category and category.slug == item.slug %}selected{% endif %}>{{ item.title }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn--primary" type="submit">Найти</button>
+  </form>
+
+  {% if rows %}
+    <div class="filterbar">
+      <span class="filterbar__label">что дальше</span>
+      <span class="muted">«Выбрать» откроет строку состава с уже
+        заполненными артикулами: останется указать обозначения на плате и
+        количество. Значения переносятся из карточки один раз — состав
+        остаётся документом и от последующих правок в библиотеке не
+        меняется.</span>
+    </div>
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Группа</th>
+            <th>Vendor P/N</th>
+            <th>Vendor</th>
+            <th>OY ID</th>
+            <th>GBT P/N</th>
+            <th>Description</th>
+            <th style="width:92px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td>
+                {{ row.category.title }}
+                {% if row.category.replacement %}<span class="chip chip--replacement">замена</span>{% endif %}
+              </td>
+              <td class="pn">
+                <a class="rowlink" href="{{ row.object.get_absolute_url }}">{{ row.object.vendor_pn|cell }}</a>
+                {% if row.used %}
+                  <span class="chip" title="Этот компонент уже стоит в составе этой ревизии">уже в составе</span>
+                {% endif %}
+              </td>
+              <td class="pn">{{ row.object.vendor|cell }}</td>
+              <td class="pn">{{ row.object.oy_id|cell }}</td>
+              <td class="pn">{{ row.object.gbt_pn|cell }}</td>
+              <td class="desc">{{ row.object.description|cell }}</td>
+              <td class="pn"><a class="btn" href="{{ row.url }}">Выбрать</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if truncated %}
+      <div class="pager">
+        <span class="muted">Показаны первые {{ limit }} совпадений — уточните
+          запрос или выберите группу.</span>
+      </div>
+    {% endif %}
+  {% elif term %}
+    <div class="empty">
+      <h2>В библиотеке ничего не нашлось</h2>
+      <p class="muted">Попробуйте часть артикула без разделителей или имя
+        производителя. Если компонента в библиотеке действительно нет, его
+        сначала заводят в ней — из состава платы он не появится, и ведут
+        библиотеку библиотекари.</p>
+    </div>
+  {% else %}
+    <div class="empty">
+      <h2>Что ищем?</h2>
+      <p class="muted">Поиск идёт по рабочим таблицам и таблицам замен сразу:
+        по Vendor P/N, OY P/N, OY ID, GBT P/N, описанию, производителю,
+        корпусу и подгруппе.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+# Дополнение к docker-compose.yml: PostgreSQL рядом с приложением, в контейнере.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up -d
+#
+# Чтобы не писать оба файла каждый раз, в .env есть строка:
+#   COMPOSE_FILE=docker-compose.yml:docker-compose.postgres.yml
+# с ней достаточно обычного `docker compose up -d`.
+#
+# ВАЖНО: 27 таблиц компонентов Django не создаёт — их ведёт не он. В пустую
+# базу их нужно залить самим, pg_restore с рабочей копии. Порядок — в README,
+# раздел «База в контейнере».
+
+services:
+  web:
+    environment:
+      POSTGRES_HOST: db
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    # Версия закреплена до младшей: одинаковая база на всех машинах и
+    # никаких сюрпризов от `docker compose pull`. Обновление внутри 18-й
+    # ветки (18.6 → 18.7) выгрузки и восстановления не требует — меняете
+    # тег, пересоздаёте контейнер, том остаётся прежним. Переход на 19-ю
+    # так не пройдёт: мажорная версия, нужен pg_upgrade или dump/restore.
+    image: postgres:18.6
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-oy_system_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?задайте POSTGRES_PASSWORD в .env}
+      # Кодировка и правило сортировки задаются один раз, при создании базы,
+      # и потом не меняются. Если исходная база жила с другим правилом,
+      # порядок строк в списках после переезда будет другим — задайте здесь
+      # то же, что было: SELECT datcollate FROM pg_database WHERE datname=...
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS:---encoding=UTF8}
+    ports:
+      # База открыта наружу: с этими таблицами работает не только сайт —
+      # представление Parts читает сторонний софт, и он стоит на других
+      # машинах. Ограничить доступ здесь нечем, кроме адреса привязки,
+      # поэтому фильтровать нужно файрволом — и учтите, что Docker правит
+      # iptables в обход ufw (подробности в README, «База снаружи»).
+      - "${POSTGRES_BIND:-0.0.0.0}:${POSTGRES_PORT_PUBLISHED:-5432}:5432"
+    volumes:
+      # Не .../data: начиная с 18 образ держит кластер в подкаталоге с
+      # номером версии (/var/lib/postgresql/18/docker), а томом объявлен
+      # родитель. Со старым путём контейнер не поднимется. Сделано это ради
+      # будущих обновлений: кластеры соседних версий лежат в одном томе
+      # рядом, и pg_upgrade --link отрабатывает почти мгновенно.
+      - pgdata:/var/lib/postgresql
+    # 64 МБ разделяемой памяти по умолчанию мало: на больших сортировках и
+    # параллельных планах Postgres в контейнере падает с «No space left on
+    # device» в /dev/shm
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-oy_system_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # база должна успеть закрыть контрольную точку, иначе следующий запуск
+    # уйдёт в восстановление
+    stop_grace_period: 1m
+
+volumes:
+  pgdata:

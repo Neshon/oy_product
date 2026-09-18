@@ -1,0 +1,44 @@
+{% extends "components/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Строка состава · {{ item.oy_pn }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">состав · {{ item.oy_pn }}</div>
+  <div class="legend__row">
+    <h1>{% if line %}Правка строки{% else %}Новая строка состава{% endif %}</h1>
+    <span class="legend__actions">
+      <a class="btn btn--ghost" href="{{ item.get_absolute_url }}">Отменить</a>
+      <button class="btn btn--primary" type="submit" form="line-form">Сохранить</button>
+    </span>
+  </div>
+</div>
+
+<form method="post" novalidate id="line-form">
+  {% csrf_token %}
+  <div class="panel">
+    {% if form.non_field_errors %}
+      <div class="section__head">
+        <span class="errors">{{ form.non_field_errors|striptags }}</span>
+      </div>
+    {% endif %}
+    <div class="formgrid">
+      {% for field in form %}
+        {{ field|as_crispy_field }}
+      {% endfor %}
+    </div>
+  </div>
+  <p class="formnote">
+    Укажите либо вложенную позицию, либо номер с описанием — для того,
+    чему карточки ещё нет.
+  </p>
+</form>
+
+{% if line %}
+  <form method="post" action="{% url 'servers:line-delete' item.pk line.pk %}">
+    {% csrf_token %}
+    <button class="btn btn--ghost" type="submit">Удалить строку</button>
+  </form>
+{% endif %}
+{% endblock %}

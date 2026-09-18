@@ -1,0 +1,183 @@
+{% load static %}<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#272b32">
+<title>{% block title %}Библиотека компонентов{% endblock %}</title>
+
+{% include "_theme_boot.html" %}
+
+<!-- Интерфейс набран системной Verdana Medium, её тянуть не нужно.
+     Из сети приходит только моноширинный Roboto Mono — им набраны
+     артикулы, OY ID и имена таблиц. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'components/app.css' %}">
+<!-- Выпадающие списки. defer: скрипт только дополняет разметку, и до
+     разбора страницы ему делать нечего. Без него на странице остаются
+     обычные <select> — они и хранят значение. -->
+<script src="{% static 'components/select.js' %}" defer></script>
+<script src="{% static 'components/file.js' %}" defer></script>
+<script src="{% static 'components/lightbox.js' %}" defer></script>
+<script src="{% static 'components/tabs.js' %}" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar__side">
+    <a class="topbar__logo" href="{% url 'components:dashboard' %}">
+      <img src="{% static 'components/logo-white.svg' %}" alt="OpenYard">
+    </a>
+    <span class="topbar__section">Библиотека компонентов</span>
+  </div>
+
+  <form class="topbar__search" action="{% url 'components:search' %}" method="get" role="search">
+    <input type="search" name="q" id="global-search" value="{{ request.GET.q|default:'' }}"
+           placeholder="Поиск по всем группам: PN, описание, производитель"
+           aria-label="Поиск по всем группам" autocomplete="off">
+    <span class="topbar__hint" aria-hidden="true"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+  </form>
+
+  <div class="topbar__side topbar__side--end topbar__user">
+    <button type="button" class="icon-btn" id="theme-toggle"
+            aria-label="Переключить тему" title="Светлая или тёмная тема">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4.5"></circle>
+        <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"></path>
+      </svg>
+    </button>
+    {% if user.is_authenticated %}
+      <span><strong>{{ user.get_username }}</strong></span>
+      {% if can_open_admin %}
+        <a href="{% url 'admin:index' %}">админка</a>
+      {% endif %}
+      <form action="{% url 'logout' %}" method="post">
+        {% csrf_token %}
+        <button type="submit" class="topbar__logout">выйти</button>
+      </form>
+    {% else %}
+      <a href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">войти</a>
+    {% endif %}
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="rail">
+    <div class="rail__title">Серверы</div>
+    {# в пунктах только имя раздела: пояснение осталось в подсказке #}
+    <a class="rail__link {% if request.resolver_match.app_name == 'servers' %}is-active{% endif %}"
+       href="{% url 'servers:list' %}" title="Серверы, их конфигурации и состав">
+      <span>SERVERS</span>
+    </a>
+    <a class="rail__link {% if request.resolver_match.app_name == 'boards' %}is-active{% endif %}"
+       href="{% url 'boards:list' %}" title="Платы">
+      <span>BOARDS</span>
+    </a>
+    {% if is_admin %}
+      <a class="rail__link {% if request.resolver_match.url_name == 'duplicates' %}is-active{% endif %}"
+         href="{% url 'components:duplicates' %}" title="Дубли">
+        <span>DUPLICATES</span>
+      </a>
+    {% endif %}
+    {% if can_edit_components %}
+      <a class="rail__link {% if request.resolver_match.url_name == 'link-import' %}is-active{% endif %}"
+         href="{% url 'components:link-import' %}" title="Импорт ссылок">
+        <span>LINKS</span>
+      </a>
+    {% endif %}
+    <a class="rail__link {% if request.resolver_match.url_name == 'changes' %}is-active{% endif %}"
+       href="{% url 'components:changes' %}" title="Журнал изменений">
+      <span>CHANGES</span>
+    </a>
+    <div class="rail__divider"></div>
+
+    <div class="rail__title">Группы компонентов</div>
+    {% for c in nav_categories %}
+      {# только имя таблицы: русское название осталось в подсказке #}
+      <a class="rail__link {% if category and category.slug == c.slug %}is-active{% endif %}"
+         href="{% url 'components:list' c.slug %}" title="{{ c.title }}">
+        <span>{{ c.table }}</span>
+      </a>
+    {% endfor %}
+    <div class="rail__divider"></div>
+    <div class="rail__title">Замены</div>
+    {% for c in nav_replacements %}
+      <a class="rail__link {% if category and category.slug == c.slug %}is-active{% endif %}"
+         href="{% url 'components:list' c.slug %}" title="{{ c.title }}">
+        <span>{{ c.table }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+
+  <main class="main">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+{% if messages %}
+  <div class="notes" id="toasts" role="status" aria-live="polite">
+    {% for message in messages %}
+      <div class="note note--{{ message.tags|default:'info' }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+<script>
+  // селекты фильтров отправляют форму сразу после выбора
+  document.addEventListener('change', function (event) {
+    const el = event.target;
+    if (!el.matches('[data-autosubmit]') || !el.form) { return; }
+    // requestSubmit, а не submit: обычный submit() не поднимает событие
+    // отправки, а на нём висит склейка значений фильтра в один параметр
+    if (el.form.requestSubmit) { el.form.requestSubmit(); }
+    else { el.form.submit(); }
+  });
+
+  // карточка открывается кликом по любому месту строки
+  document.addEventListener('click', function (event) {
+    if (event.target.closest('a, button, input, label, select')) { return; }
+    const row = event.target.closest('tr[data-href]');
+    if (!row) { return; }
+    if (window.getSelection && String(window.getSelection()).length > 0) { return; }
+    if (event.metaKey || event.ctrlKey || event.button === 1) {
+      window.open(row.dataset.href, '_blank', 'noopener');
+    } else {
+      window.location.href = row.dataset.href;
+    }
+  });
+
+  // Ctrl+K или / — в поиск, Esc — выйти из него
+  document.addEventListener('keydown', function (event) {
+    const search = document.getElementById('global-search');
+    if (!search) { return; }
+    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName);
+    if (((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k')
+        || (event.key === '/' && !typing)) {
+      event.preventDefault();
+      search.focus();
+      search.select();
+    }
+    if (event.key === 'Escape' && document.activeElement === search) { search.blur(); }
+  });
+
+  // тема запоминается между заходами
+  document.getElementById('theme-toggle').addEventListener('click', function () {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('oy-theme', next); } catch (e) {}
+  });
+
+  // уведомления убираются сами, чтобы не копиться в углу
+  document.querySelectorAll('#toasts .note').forEach(function (note, i) {
+    setTimeout(function () {
+      note.classList.add('is-leaving');
+      setTimeout(function () { note.remove(); }, 260);
+    }, 5000 + i * 600);
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

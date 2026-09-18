@@ -1,0 +1,54 @@
+{% extends "components/base.html" %}
+
+{% block title %}Сводка · {{ item.oy_pn }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">сводка по покупным позициям</div>
+  <div class="legend__row">
+    <h1 class="dbname">{{ item.oy_pn }}</h1>
+    <span class="legend__count">{{ rows|length }} наименований</span>
+    <span class="legend__actions">
+      <a class="btn" href="?export=csv">Выгрузить CSV</a>
+      <a class="btn btn--ghost" href="{{ item.get_absolute_url }}">К карточке</a>
+    </span>
+  </div>
+</div>
+
+<div class="panel">
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>OY P/N</th>
+            <th>GCT P/N</th>
+            <th>Описание</th>
+            <th style="width:130px">Всего</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="pn">
+                {% if row.child %}<a href="{{ row.child.get_absolute_url }}">{{ row.oy_pn }}</a>{% else %}{{ row.oy_pn|default:"—" }}{% endif %}
+              </td>
+              <td class="pn">{{ row.gct_pn|default:"—" }}</td>
+              <td class="desc">{{ row.description|default:"—" }}</td>
+              <td class="num">{{ row.quantity }} {{ row.unit }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="hints muted">
+      Складываются только покупные позиции — то, у чего своего состава нет.
+      Узлы в сводку не идут, иначе плата попала бы в неё и сама, и своими
+      компонентами.
+    </div>
+  {% else %}
+    <div class="empty"><h2>Считать нечего</h2>
+      <p class="muted">У позиции нет вложенного состава.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

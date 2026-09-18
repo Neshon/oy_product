@@ -1,0 +1,116 @@
+{% extends "components/base.html" %}
+
+{% block title %}{{ item.oy_pn }} · Серверы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">{{ item.get_kind_display|lower }}</div>
+  <div class="legend__row">
+    <h1 class="dbname">{{ item.oy_pn }}</h1>
+    <span class="chip">{{ item.get_status_display }}</span>
+    {% if item.gct_pn %}<span class="chip chip--table">{{ item.gct_pn }}</span>{% endif %}
+    <span class="legend__actions">
+      <a class="btn" href="{% url 'servers:tree' item.pk %}">Разузлование</a>
+      <a class="btn" href="{% url 'servers:summary' item.pk %}">Сводка</a>
+      <a class="btn" href="{% url 'servers:where-used' item.pk %}">Где применяется</a>
+      {% if can_edit_boards %}
+        <a class="btn" href="{% url 'servers:edit' item.pk %}">Править</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="stack">
+  <div class="panel">
+    <div class="section__head">сведения</div>
+    <dl class="specs">
+      <div><dt>Наименование</dt><dd>{{ item.name|default:"—" }}</dd></div>
+      <div><dt>Тип</dt><dd>{{ item.get_kind_display }}</dd></div>
+      <div><dt>Децимальный номер</dt><dd>{{ item.decimal_number|default:"—" }}</dd></div>
+      <div><dt>Ответственный</dt><dd>{{ item.owner|default:"—" }}</dd></div>
+      <div><dt>Источник</dt><dd>{{ item.source|default:"заведено вручную" }}</dd></div>
+      {% if item.board %}
+        <div><dt>Плата</dt>
+          <dd><a href="{{ item.board.get_absolute_url }}">{{ item.board.base_pn }}</a></dd></div>
+      {% endif %}
+      {% for key, value in details %}
+        <div><dt>{{ key }}</dt><dd>{{ value }}</dd></div>
+      {% endfor %}
+    </dl>
+    {% if item.description %}
+      <div class="hints">{{ item.description|linebreaksbr }}</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="section__head">состав
+      <span class="legend__actions">
+        {% if item.is_board %}
+          <span class="muted">ведётся в разделе плат</span>
+        {% elif can_edit_boards %}
+          <a class="btn" href="{% url 'servers:line-create' item.pk %}">Добавить строку</a>
+        {% endif %}
+      </span>
+    </div>
+
+    {% if lines %}
+      <div class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th style="width:70px">поз.</th>
+              <th>что входит</th>
+              <th>описание</th>
+              <th style="width:110px">кол-во</th>
+              <th>обозначение</th>
+              <th>примечание</th>
+              {% if can_edit_boards and not item.is_board %}<th style="width:120px"></th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in lines %}
+              <tr>
+                <td class="num">{{ line.position|default:"—" }}</td>
+                <td class="pn">
+                  {% if line.child %}
+                    <a href="{{ line.child.get_absolute_url }}">{{ line.child.oy_pn }}</a>
+                  {% else %}
+                    {{ line.oy_pn|default:line.gct_pn|default:"—" }}
+                  {% endif %}
+                </td>
+                <td class="desc">{{ line.description|default:"—" }}</td>
+                <td class="num">{{ line.quantity }} {{ line.unit }}</td>
+                <td class="pn">{{ line.designator|default:"—" }}</td>
+                <td class="desc">{{ line.comment|default:"—" }}</td>
+                {% if can_edit_boards and not item.is_board %}
+                  <td>
+                    <a class="btn btn--ghost" href="{% url 'servers:line-edit' item.pk line.line.pk %}">править</a>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        <h2>Состава пока нет</h2>
+        <p class="muted">добавьте строки руками или загрузите system bom.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="section__head">где применяется</div>
+    {% if used_in %}
+      <div class="filterbar">
+        {% for row in used_in %}
+          <a class="chip chip--table" href="{{ row.item.get_absolute_url }}">{{ row.item.oy_pn }}</a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="hints muted">Ни в одно изделие не входит.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

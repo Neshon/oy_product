@@ -1,0 +1,140 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}Правка от {{ change.created|date:"d.m.Y H:i" }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    {% if category %}
+      <a href="{% url 'components:list' category.slug %}">{{ category.table }}</a> · история изменений
+    {% else %}
+      {{ change.component_table }} · история изменений
+    {% endif %}
+  </div>
+  <div class="legend__row">
+    <h1 class="mono">{{ change.get_action_display }}</h1>
+    <span class="chip chip--event {{ change.chip_class }}">{{ change.short_action }}</span>
+    <span class="chip">{{ change.created|date:"d.m.Y H:i" }}</span>
+    <span class="chip" title="{{ change.author }}">{{ change.author_display|default:"автор неизвестен" }}</span>
+    {% if change.source %}<span class="chip">{{ change.source }}</span>{% endif %}
+    <span class="legend__actions">
+      {% if object %}
+        <a class="btn" href="{{ object.get_absolute_url }}">К компоненту</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="stack">
+{% if not object %}
+  {# история переживает компонент: внешнего ключа на неуправляемую таблицу нет #}
+  <div class="panel">
+    <div class="empty">
+      <h2>Компонента больше нет</h2>
+      <p class="muted">Запись {{ change.component_table }} #{{ change.component_id }}
+         удалена или перенесена. Сама правка сохранилась — она ниже.</p>
+    </div>
+  </div>
+{% endif %}
+
+{% if change.is_duplicate %}
+  {# у дубля в changes не поля, а записи, с которыми совпало #}
+  <div class="panel">
+    <div class="section__head">
+      совпадает с {% if change.changes %} · {{ change.changes|length }}{% endif %}
+    </div>
+    <p class="muted" style="padding:0 var(--s-4)">
+      Компонент завели, когда в библиотеке уже были похожие записи. Форма
+      об этом предупредила, и заведение подтвердили вручную.
+    </p>
+    <div class="table-wrap table-wrap--flow">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Запись</th>
+            <th>Таблица</th>
+            <th>Совпало по</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in change.changes %}
+            <tr>
+              <td class="pn">{{ item.title|default:"—" }}</td>
+              <td class="pn">{{ item.table }} #{{ item.id }}</td>
+              <td class="desc">{{ item.reason|default:"артикул" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+<div class="panel">
+  <div class="section__head">
+    {% if change.action == "deleted" %}что было в записи{% else %}что поменялось{% endif %}
+    {% if change.changes %} · {{ change.changes|length }}{% endif %}
+  </div>
+
+  {% if change.changes %}
+    <div class="table-wrap table-wrap--flow">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>Параметр</th>
+            <th>Было</th>
+            {# у удаления «стало» нет: записи больше нет целиком #}
+            {% if change.action != "deleted" %}<th>Стало</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in change.changes %}
+            <tr>
+              <td class="pn diff-label">{{ item.label }}</td>
+              <td class="desc">
+                {% if item.old %}
+                  <span class="diff diff--old">{{ item.old }}</span>
+                {% else %}
+                  {# зачёркивать нечего: поля просто не было #}
+                  <span class="diff--none">—</span>
+                {% endif %}
+              </td>
+              {% if change.action != "deleted" %}
+                <td class="desc">
+                  {% if item.new %}
+                    <span class="diff diff--new">{{ item.new }}</span>
+                  {% else %}
+                    <span class="diff--none">—</span>
+                  {% endif %}
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <h2>Ничего не записано</h2>
+      <p class="muted">В этой правке не осталось полей — возможно, она была
+         сохранена до того, как история стала вести подробности.</p>
+    </div>
+  {% endif %}
+</div>
+{% endif %}
+</div>
+
+<div class="pager">
+  <span class="muted">
+    {% if object %}
+      {{ object.display_title }}
+    {% else %}
+      {{ change.component_table }} #{{ change.component_id }}
+    {% endif %}
+  </span>
+  <span class="pager__spacer"></span>
+  {% if object %}
+    <a class="btn" href="{{ object.get_absolute_url }}">Карточка компонента</a>
+  {% endif %}
+</div>
+{% endblock %}

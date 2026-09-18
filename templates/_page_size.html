@@ -1,0 +1,9 @@
+<span class="toolbar__end">
+  <select class="field field--select" id="per_page" name="per_page"
+          form="list-filters" data-autosubmit="1" style="max-width:88px"
+          aria-label="Строк на странице" title="Строк на странице">
+    {% for size in page_sizes %}
+      <option value="{{ size }}" {% if size == per_page %}selected{% endif %}>{{ size }}</option>
+    {% endfor %}
+  </select>
+</span>

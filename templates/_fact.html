@@ -1,0 +1,13 @@
+{% comment %}
+Строка списка полей. Разметку задаёт dl.specs — здесь только содержимое.
+Подробности и причина отдельного тега — в components_extras.fact.
+{% endcomment %}
+<div>
+  <dt>{{ label }}</dt>
+  <dd>
+    {% if value %}
+      {% if kind == "link" %}<a href="{{ value }}">ссылка</a>
+      {% else %}{{ value }}{% endif %}
+    {% else %}<span class="muted">—</span>{% endif %}
+  </dd>
+</div>

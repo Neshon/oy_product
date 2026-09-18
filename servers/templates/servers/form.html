@@ -1,0 +1,34 @@
+{% extends "components/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if item %}{{ item.oy_pn }}{% else %}Новая позиция{% endif %} · Серверы{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">{% if item %}правка позиции{% else %}новая позиция{% endif %}</div>
+  <div class="legend__row">
+    <h1>{% if item %}{{ item.oy_pn }}{% else %}Новая позиция{% endif %}</h1>
+    <span class="legend__actions">
+      <a class="btn btn--ghost"
+         href="{% if item %}{{ item.get_absolute_url }}{% else %}{% url 'servers:list' %}{% endif %}">Отменить</a>
+      <button class="btn btn--primary" type="submit" form="item-form">Сохранить</button>
+    </span>
+  </div>
+</div>
+
+<form method="post" novalidate id="item-form">
+  {% csrf_token %}
+  <div class="panel">
+    <div class="formgrid">
+      {% for field in form %}
+        {{ field|as_crispy_field }}
+      {% endfor %}
+    </div>
+  </div>
+  {% if item %}
+    <p class="formnote">
+      Удалить позицию: <a href="{% url 'servers:delete' item.pk %}">на страницу удаления</a>.
+    </p>
+  {% endif %}
+</form>
+{% endblock %}

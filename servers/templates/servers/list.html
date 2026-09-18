@@ -1,0 +1,80 @@
+{% extends "components/base.html" %}
+
+{% block title %}Серверы · Библиотека компонентов{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">серверы, узлы и всё, что в них входит</div>
+  <div class="legend__row">
+    <h1>Серверы</h1>
+    <span class="legend__count">{{ page.paginator.count }} позиций</span>
+    <span class="legend__actions">
+      {% if can_edit_boards %}
+        <a class="btn" href="{% url 'servers:create' %}">Завести позицию</a>
+        <a class="btn btn--primary" href="{% url 'servers:import' %}">Импортировать System BOM</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="panel">
+  <form class="toolbar" method="get">
+    <input class="field field--search" type="search" name="q" value="{{ term }}"
+           placeholder="OY P/N, GCT P/N, наименование, децимальный номер"
+           autocomplete="off">
+    <select class="field field--select" name="kind" data-autosubmit="1"
+            data-title="Тип">
+      <option value="">все типы</option>
+      {% for value, label in kinds %}
+        <option value="{{ value }}" {% if value == kind %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn--primary" type="submit">Найти</button>
+    {% if term or kind %}
+      <a class="btn btn--ghost" href="{% url 'servers:list' %}">Сбросить</a>
+    {% endif %}
+  </form>
+
+  {% if page.object_list %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>OY P/N</th>
+            <th>Тип</th>
+            <th>Наименование</th>
+            <th>GCT P/N</th>
+            <th>Децимальный номер</th>
+            <th>Статус</th>
+            <th style="width:90px">Строк</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page.object_list %}
+            <tr data-href="{{ item.get_absolute_url }}">
+              <td class="pn"><a class="rowlink" href="{{ item.get_absolute_url }}">{{ item.oy_pn }}</a></td>
+              <td>{{ item.get_kind_display }}</td>
+              <td class="desc">{{ item.name|default:"—" }}</td>
+              <td class="pn">{{ item.gct_pn|default:"—" }}</td>
+              <td class="pn">{{ item.decimal_number|default:"—" }}</td>
+              <td>{{ item.get_status_display }}</td>
+              <td class="num">{{ item.line_count }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% include "_pagination.html" with only_pages=1 %}
+  {% else %}
+    <div class="empty">
+      <h2>Позиций пока нет</h2>
+      <p class="muted">Загрузите System BOM — состав сервера разберётся сам,
+        а недостающие позиции заведутся заготовками.</p>
+      {% if can_edit_boards %}
+        <a class="btn btn--primary" href="{% url 'servers:import' %}">Импортировать System BOM</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

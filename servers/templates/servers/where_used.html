@@ -1,0 +1,44 @@
+{% extends "components/base.html" %}
+
+{% block title %}Где применяется · {{ item.oy_pn }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">применяемость</div>
+  <div class="legend__row">
+    <h1 class="dbname">{{ item.oy_pn }}</h1>
+    <span class="legend__count">{{ rows|length }} изделий</span>
+    <span class="legend__actions">
+      <a class="btn btn--ghost" href="{{ item.get_absolute_url }}">К карточке</a>
+    </span>
+  </div>
+</div>
+
+<div class="panel">
+  {% if rows %}
+    <div class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr><th style="width:90px">Уровней</th><th>OY P/N</th><th>Тип</th><th>Наименование</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr data-href="{{ row.item.get_absolute_url }}">
+              <td class="num">{{ row.depth }}</td>
+              <td class="pn"><a class="rowlink" href="{{ row.item.get_absolute_url }}">{{ row.item.oy_pn }}</a></td>
+              <td>{{ row.item.get_kind_display }}</td>
+              <td class="desc">{{ row.item.name|default:"—" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="hints muted">
+      «Уровней» — через сколько ступеней состава позиция входит в изделие.
+    </div>
+  {% else %}
+    <div class="empty"><h2>Нигде не применяется</h2>
+      <p class="muted">Позиция не входит ни в один состав.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

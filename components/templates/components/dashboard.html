@@ -1,0 +1,105 @@
+{% extends "components/base.html" %}
+
+{% block title %}Библиотека компонентов{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Библиотека радиоэлектронных компонентов</h1>
+  <p>Единый источник элементной базы: параметры, корпуса, документация,
+     модели для схем и плат, замены и аналоги.</p>
+  <div class="hero__stats">
+    <div>
+      <div class="stat__value">{{ total }}</div>
+      <div class="stat__label">записей всего</div>
+    </div>
+    <div>
+      <div class="stat__value">{{ rows|length }}</div>
+      <div class="stat__label">групп в работе</div>
+    </div>
+    <div>
+      <div class="stat__value">{{ replacement_categories|length }}</div>
+      <div class="stat__label">таблиц замен</div>
+    </div>
+  </div>
+  <div class="hero__cables cables" aria-hidden="true"></div>
+</div>
+
+<div class="stack">
+
+{% if failed %}
+  <div class="panel">
+    <div class="empty">
+      <h2>Часть таблиц не читается</h2>
+      <p class="muted">{{ failed|join:", " }} — проверьте подключение к базе и права пользователя.</p>
+    </div>
+  </div>
+{% endif %}
+
+{% if coverage %}
+  <div class="panel coverage">
+    <div class="coverage__main">
+      <div class="coverage__stat">
+        <div class="coverage__value">{{ coverage.percent }}<span>%</span></div>
+        <div class="stat__label">связано с библиотекой</div>
+      </div>
+
+      <div class="coverage__body">
+        <div class="coverage__bar" role="img"
+             aria-label="{{ coverage.linked }} из {{ coverage.rows }} строк связаны">
+          <span style="width: {{ coverage.percent }}%"></span>
+        </div>
+        <div class="coverage__legend">
+          <span class="coverage__key coverage__key--linked">{{ coverage.linked }} из библиотеки</span>
+          <span class="coverage__key coverage__key--plain">{{ coverage.unlinked }} из файла</span>
+          <span class="muted">всего {{ coverage.rows }} строк в текущих ревизиях</span>
+        </div>
+      </div>
+    </div>
+
+    {% if coverage.worst %}
+      <div class="coverage__worst">
+        <span class="filterbar__label">чаще всего не хватает</span>
+        {% for board in coverage.worst %}
+          <a class="chip" href="{% url 'boards:detail' board.id %}">{{ board.base_pn }}<b>{{ board.unlinked }}</b></a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endif %}
+
+<div class="panel">
+  <div class="section__head">состав библиотеки · PostgreSQL</div>
+  {% if rows %}
+    <div class="tiles">
+      {% for row in rows %}
+        <a class="tile" href="{% url 'components:list' row.category.slug %}">
+          <div class="tile__name">{{ row.category.table }}</div>
+          <div class="tile__title">{{ row.category.title }}</div>
+          <div class="tile__count">{{ row.count }}</div>
+          <div class="tile__bar"><span style="width: {{ row.share }}%"></span></div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <h2>Данных нет</h2>
+      <p class="muted">База пуста или недоступна.</p>
+    </div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <div class="section__head">как пользоваться</div>
+  <div class="hints">
+    <div>Выберите группу слева, чтобы отфильтровать и отредактировать компоненты.</div>
+    <div>Поиск в шапке (<span class="mono">Ctrl</span> + <span class="mono">K</span>)
+         проходит по всем группам сразу: часть Vendor PN, OY PN, описания или производителя.</div>
+    <div>В карточке компонента показываются аналоги по OY ID и платы, где он применяется.</div>
+    <div><a href="{% url 'boards:list' %}">Платы</a> собираются импортом BOM-файла:
+         шапка и состав разбираются автоматически.</div>
+    <div>Полный доступ к таблицам — в <a href="{% url 'admin:index' %}">админке Django</a>.</div>
+  </div>
+</div>
+
+</div>
+{% endblock %}

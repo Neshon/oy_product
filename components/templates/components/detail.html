@@ -1,0 +1,189 @@
+{% extends "components/base.html" %}
+{% load components_extras %}
+
+{% block title %}{{ object.display_title }} · {{ category.title }}{% endblock %}
+
+{% block content %}
+<div class="legend">
+  <div class="legend__eyebrow">
+    <a href="{% url 'components:list' category.slug %}">{{ category.table }}</a> · {{ category.title }}
+  </div>
+  <div class="legend__row">
+    <h1 class="mono">{{ object.display_title }}</h1>
+    {% if category.replacement %}<span class="chip chip--replacement">замена</span>{% endif %}
+    {% if category.read_only %}<span class="chip">только чтение</span>{% endif %}
+    <span class="legend__actions">
+      {% if can_edit_components and not category.read_only %}
+        <a class="btn" href="{% url 'components:edit' category.slug object.pk %}">Редактировать</a>
+        {% if not category.replacement %}
+          {# замену заводят из карточки основного компонента, а не по образцу #}
+          <a class="btn btn--primary" href="{% url 'components:create' category.slug %}?like={{ object.pk }}">Добавить по образцу</a>
+        {% endif %}
+        <a class="btn btn--danger" href="{% url 'components:delete' category.slug object.pk %}">Удалить</a>
+      {% endif %}
+    </span>
+  </div>
+</div>
+
+<div class="cols">
+  <div class="panel">
+    <div class="section__head">заполненные параметры</div>
+    <dl class="specs">
+      {% for label, value, name in filled %}
+        <div>
+          <dt>{{ label }}</dt>
+          <dd>{% if name == "created" %}{{ value|date:"d.m.Y" }}{% else %}{{ value|cell }}{% endif %}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </div>
+
+  <div class="colstack">
+    <div class="panel">
+      <div class="section__head">
+        аналоги по OY ID
+        {% if related %} · {{ related|length }}{% if related|length == related_limit %}+{% endif %}{% endif %}
+      </div>
+
+      {% if not oy_id %}
+        <div class="empty">
+          <h2>Сопоставить не по чему</h2>
+          <p class="muted">Аналоги подбираются по OY ID, а у этой записи он не заполнен.</p>
+          {% if can_edit_components and not category.read_only %}
+            <a class="btn" href="{% url 'components:edit' category.slug object.pk %}">Заполнить OY ID</a>
+          {% endif %}
+        </div>
+      {% elif not related %}
+        <div class="empty">
+          <h2>Аналогов нет</h2>
+          <p class="muted">Других записей с OY ID <span class="mono">{{ oy_id }}</span>
+            не нашлось{% if pair %} ни в {{ category.table }}, ни в {{ pair.table }}{% endif %}.</p>
+          {% if can_edit_components and pair and not category.replacement and not category.read_only %}
+            <a class="btn btn--primary"
+               href="{% url 'components:create' pair.slug %}?from={{ object.pk }}">
+              Добавить замену</a>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="table-wrap table-wrap--flow">
+          <table class="grid grid--compact">
+            <thead>
+              <tr>
+                <th>Vendor PN</th>
+                <th>Description</th>
+                <th>Vendor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in related %}
+                <tr data-href="{{ item.obj.get_absolute_url }}">
+                  <td class="pn">
+                    <a class="rowlink" href="{{ item.obj.get_absolute_url }}">{{ item.obj.vendor_pn|cell }}</a>
+                    {% if item.category.replacement %}
+                      <span class="chip chip--replacement" title="{{ item.category.table }}">замена</span>
+                    {% endif %}
+                  </td>
+                  <td class="desc">{{ item.obj.description|cell }}</td>
+                  <td class="pn">{{ item.obj.vendor|cell }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span class="muted">OY ID <span class="mono">{{ oy_id }}</span></span>
+          <span class="pager__spacer"></span>
+          {% if can_edit_components and pair and not category.replacement and not category.read_only %}
+            <a class="btn" href="{% url 'components:create' pair.slug %}?from={{ object.pk }}">Добавить замену</a>
+          {% endif %}
+          <a class="btn" href="{% url 'components:search' %}?q={{ oy_id|urlencode }}">Искать везде</a>
+        </div>
+      {% endif %}
+    </div>
+    <div class="panel">
+      <div class="section__head">
+        история изменений
+        {% if changes %} · {{ changes|length }}{% endif %}
+      </div>
+
+      {% if changes %}
+        <table class="grid grid--compact">
+          <tbody>
+            {% for change in changes %}
+              <tr data-href="{% url 'components:change' change.pk %}">
+                <td>
+                  <span class="chip chip--event {{ change.chip_class }}">{{ change.short_action }}</span>
+                </td>
+                <td class="pn">
+                  <a class="rowlink" target="_blank" rel="noopener"
+                     title="{{ change.author }}"
+                     href="{% url 'components:change' change.pk %}">
+                    {{ change.author_display|default:"—" }}</a>
+                </td>
+                <td class="desc">{{ change.created|date:"d.m.Y H:i" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="pager">
+          <span class="pager__spacer"></span>
+          <a class="btn" href="{% url 'components:changes' %}?table={{ category.table }}">
+            Весь журнал по группе</a>
+        </div>
+      {% else %}
+        <div class="empty">
+          <h2>Правок не было</h2>
+          <p class="muted">История ведётся с того момента, как её включили:
+             изменения, сделанные раньше, в неё не попали.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="section__head">
+        применяется на платах
+        {% if usages %} · {{ usages|length }}{% endif %}
+      </div>
+
+      {% if usages %}
+        <div class="table-wrap table-wrap--flow">
+          <table class="grid grid--compact">
+            <thead>
+              <tr>
+                <th>Плата</th>
+                <th>Part References</th>
+                <th style="width:80px">Позиций</th>
+                <th style="width:70px">Кол-во</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for usage in usages %}
+                <tr data-href="{{ usage.board.get_absolute_url }}">
+                  <td class="pn">
+                    <a class="rowlink" href="{{ usage.board.get_absolute_url }}">{{ usage.board.base_pn }}</a>
+                  </td>
+                  {# полный список обозначений — во всплывающей подсказке #}
+                  <td class="desc" title="{{ usage.references }}">{{ usage.references|default:"—"|truncatechars:25 }}</td>
+                  <td class="num">{{ usage.positions }}</td>
+                  <td class="num">{{ usage.qty|default:"—" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span class="muted">сопоставлено по {{ usage_match }}</span>
+        </div>
+      {% else %}
+        <div class="empty">
+          <h2>Нигде не используется</h2>
+          <p class="muted">Ни в одном загруженном BOM этот компонент не найден
+             ни по Vendor P/N с Vendor, ни по GBT P/N.</p>
+          <a class="btn" href="{% url 'boards:list' %}">Платы</a>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

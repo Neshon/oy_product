@@ -1,0 +1,8 @@
+{% comment %}
+Все поля формы подряд — для {{ form|crispy }}. Раскладку задаёт CSS
+(.formgrid вокруг), поэтому обёрток и колонок здесь нет.
+{% endcomment %}
+{% include "oy/errors.html" %}
+{% for field in form %}
+  {% include "oy/field.html" %}
+{% endfor %}
